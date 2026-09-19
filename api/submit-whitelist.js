@@ -1,146 +1,221 @@
-import crypto from 'node:crypto'
+import { createHmac } from 'node:crypto';
 
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 5
-const rateMap = globalThis.__mossuriRateMap || new Map()
-globalThis.__mossuriRateMap = rateMap
+const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL;
+const HMAC_SECRET = process.env.MOSSURI_HMAC_SECRET;
 
-function json(res, status, body) {
-  res.status(status).setHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify(body))
+function sendJson(res, status, data) {
+  res.status(status);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json(data);
 }
 
-function clean(v) {
-  return String(v ?? '').trim()
-}
+async function postToGoogleAppsScript(url, body) {
+  let currentUrl = url;
 
-function normalizeUsername(v) {
-  return clean(v).replace(/^@/, '')
-}
+  // Google Apps Script can redirect POST requests.
+  // We manually follow redirects so the request remains POST.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const response = await fetch(currentUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body,
+      redirect: 'manual',
+    });
 
-function isValidUsername(v) {
-  const u = normalizeUsername(v)
-  return /^[A-Za-z0-9_]{1,15}$/.test(u)
-}
+    // Follow Google Apps Script redirects while keeping POST.
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
 
-function isValidXStatusUrl(v) {
-  try {
-    const u = new URL(clean(v))
-    const host = u.hostname.toLowerCase().replace(/^www\./, '')
-    if (host !== 'x.com' && host !== 'twitter.com') return false
-    const parts = u.pathname.split('/').filter(Boolean)
-    return parts.length >= 3 && parts[1].toLowerCase() === 'status' && /^\d+$/.test(parts[2])
-  } catch {
-    return false
+      if (!location) {
+        throw new Error(
+          `Google Apps Script returned HTTP ${response.status} without a redirect location.`
+        );
+      }
+
+      currentUrl = new URL(location, currentUrl).toString();
+      continue;
+    }
+
+    return response;
   }
-}
 
-function isValidEvmWallet(v) {
-  return /^0x[a-fA-F0-9]{40}$/.test(clean(v))
-}
-
-function canonicalPayload(data, timestamp) {
-  return JSON.stringify({
-    timestamp,
-    xUsername: data.xUsername,
-    likeRt: 'true',
-    quoteTweet: data.quoteTweet,
-    tagFriends: data.tagFriends,
-    wallet: data.wallet
-  })
-}
-
-function sign(payload, secret) {
-  return crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex')
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const current = rateMap.get(ip) || []
-  const recent = current.filter(t => now - t < RATE_WINDOW_MS)
-  recent.push(now)
-  rateMap.set(ip, recent)
-  return recent.length > RATE_MAX
+  throw new Error('Too many redirects from Google Apps Script.');
 }
 
 export default async function handler(req, res) {
+  // Allow browser preflight requests.
+  if (req.method === 'OPTIONS') {
+    res.status(204);
+    return res.end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return json(res, 405, { ok: false, error: 'Method not allowed.' })
+    return sendJson(res, 405, {
+      ok: false,
+      error: 'Method not allowed.',
+    });
   }
 
-  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()
-  if (rateLimited(ip)) {
-    return json(res, 429, { ok: false, error: 'Too many submissions. Please try again later.' })
+  if (!APPS_SCRIPT_URL) {
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Submission service is not configured.',
+    });
   }
 
-  const secret = process.env.MOSSURI_HMAC_SECRET
-  const appsScriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL
-  if (!secret || !appsScriptUrl) {
-    return json(res, 500, { ok: false, error: 'Submission service is not configured.' })
+  if (!HMAC_SECRET) {
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Submission security is not configured.',
+    });
   }
-
-  const body = req.body || {}
-  const data = {
-    xUsername: normalizeUsername(body.xUsername),
-    quoteTweet: clean(body.quoteTweet),
-    tagFriends: clean(body.tagFriends),
-    wallet: clean(body.wallet)
-  }
-
-  const errors = {}
-  if (!isValidUsername(data.xUsername)) errors.xUsername = 'Enter a valid X username (1–15 letters, numbers or underscores).'
-  if (!isValidXStatusUrl(data.quoteTweet)) errors.quoteTweet = 'Enter a valid X post URL, e.g. https://x.com/user/status/123456789.'
-  if (!isValidXStatusUrl(data.tagFriends)) errors.tagFriends = 'Enter the X post/comment URL where you tagged 3 friends.'
-  if (!isValidEvmWallet(data.wallet)) errors.wallet = 'Enter a valid 42-character EVM wallet address starting with 0x.'
-  if (Object.keys(errors).length) return json(res, 400, { ok: false, error: 'Please correct the highlighted fields.', fields: errors })
-
-  const timestamp = Date.now()
-  const payload = canonicalPayload(data, timestamp)
-  const signature = sign(payload, secret)
 
   try {
-    const requestBody = JSON.stringify({ ...JSON.parse(payload), signature })
+    const body =
+      typeof req.body === 'string'
+        ? JSON.parse(req.body)
+        : req.body || {};
 
-    // Google Apps Script web apps commonly return a redirect from /exec to a
-    // googleusercontent.com URL. Node fetch may change a redirected POST into
-    // GET. Follow the redirect manually and keep POST + body intact.
-    let targetUrl = appsScriptUrl
-    let response
+    const xUsername = String(body.xUsername || '').trim();
+    const likeRt = String(body.likeRt || '').trim();
+    const quoteTweet = String(body.quoteTweet || '').trim();
+    const tagFriends = String(body.tagFriends || '').trim();
+    const wallet = String(body.wallet || '').trim();
 
-    for (let i = 0; i < 5; i++) {
-      response = await fetch(targetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: requestBody,
-        redirect: 'manual'
-      })
-
-      if (![301, 302, 303, 307, 308].includes(response.status)) break
-
-      const location = response.headers.get('location')
-      if (!location) break
-      targetUrl = new URL(location, targetUrl).toString()
-    }
-
-    const text = await response.text()
-    let result
-    try { result = JSON.parse(text) } catch { result = null }
-
-    if (!response.ok || !result?.ok) {
-      if (result?.error === 'This wallet has already been submitted.') {
-        return json(res, 409, { ok: false, error: result.error })
-      }
-      return json(res, 502, {
+    // Basic required-field validation.
+    if (!xUsername) {
+      return sendJson(res, 400, {
         ok: false,
-        error: result?.error || `Google Apps Script returned HTTP ${response.status}.`
-      })
+        error: 'X username is required.',
+      });
     }
 
-    return json(res, 200, { ok: true })
+    if (!likeRt) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Like & RT information is required.',
+      });
+    }
 
-  } catch (err) {
-    console.error('Mossuri submission failed:', err?.message || err)
-    return json(res, 502, { ok: false, error: 'We could not save your application. Please try again.' })
+    if (!quoteTweet) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Quote tweet is required.',
+      });
+    }
+
+    if (!tagFriends) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Tagged friends are required.',
+      });
+    }
+
+    // Validate EVM wallet.
+    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Invalid EVM wallet address.',
+      });
+    }
+
+    /*
+     * Generate the timestamp on the server.
+     * This prevents the user's computer clock from causing
+     * the Apps Script timestamp check to fail.
+     */
+    const timestamp = Date.now();
+
+    /*
+     * IMPORTANT:
+     * This object must match the object used in Code.gs.
+     */
+    const payloadObject = {
+      timestamp,
+      xUsername,
+      likeRt,
+      quoteTweet,
+      tagFriends,
+      wallet,
+    };
+
+    const payload = JSON.stringify(payloadObject);
+
+    // Create HMAC SHA-256 signature.
+    const signature = createHmac(
+      'sha256',
+      HMAC_SECRET
+    )
+      .update(payload, 'utf8')
+      .digest('hex');
+
+    const requestBody = JSON.stringify({
+      ...payloadObject,
+      signature,
+    });
+
+    // Send to Google Apps Script and manually preserve POST
+    // through Google's redirect.
+    const googleResponse = await postToGoogleAppsScript(
+      APPS_SCRIPT_URL,
+      requestBody
+    );
+
+    const responseText = await googleResponse.text();
+
+    if (!googleResponse.ok) {
+      console.error(
+        'Google Apps Script error:',
+        googleResponse.status,
+        responseText
+      );
+
+      return sendJson(res, 502, {
+        ok: false,
+        error: `Google Apps Script returned HTTP ${googleResponse.status}.`,
+      });
+    }
+
+    let googleData;
+
+    try {
+      googleData = JSON.parse(responseText);
+    } catch {
+      console.error(
+        'Invalid response from Google Apps Script:',
+        responseText
+      );
+
+      return sendJson(res, 502, {
+        ok: false,
+        error: 'Google Apps Script returned an invalid response.',
+      });
+    }
+
+    // Apps Script itself rejected the submission.
+    if (!googleData.ok) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: googleData.error || 'Submission was rejected.',
+      });
+    }
+
+    // Everything succeeded.
+    return sendJson(res, 200, {
+      ok: true,
+      success: true,
+      message: 'Application submitted successfully.',
+    });
+
+  } catch (error) {
+    console.error('Whitelist submission error:', error);
+
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Unable to submit application. Please try again.',
+    });
   }
 }
