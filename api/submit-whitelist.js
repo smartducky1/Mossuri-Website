@@ -10,43 +10,7 @@ function sendJson(res, status, data) {
   return res.json(data);
 }
 
-async function postToGoogleAppsScript(url, body) {
-  let currentUrl = url;
-
-  // Google Apps Script can redirect POST requests.
-  // We manually follow redirects so the request remains POST.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await fetch(currentUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-      redirect: 'manual',
-    });
-
-    // Follow Google Apps Script redirects while keeping POST.
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location');
-
-      if (!location) {
-        throw new Error(
-          `Google Apps Script returned HTTP ${response.status} without a redirect location.`
-        );
-      }
-
-      currentUrl = new URL(location, currentUrl).toString();
-      continue;
-    }
-
-    return response;
-  }
-
-  throw new Error('Too many redirects from Google Apps Script.');
-}
-
 export default async function handler(req, res) {
-  // Allow browser preflight requests.
   if (req.method === 'OPTIONS') {
     res.status(204);
     return res.end();
@@ -85,15 +49,12 @@ export default async function handler(req, res) {
     const tagFriends = String(body.tagFriends || '').trim();
     const wallet = String(body.wallet || '').trim();
 
-    // Basic required-field validation.
     if (!xUsername) {
       return sendJson(res, 400, {
         ok: false,
         error: 'X username is required.',
       });
     }
-
-
 
     if (!quoteTweet) {
       return sendJson(res, 400, {
@@ -109,7 +70,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Validate EVM wallet.
     if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
       return sendJson(res, 400, {
         ok: false,
@@ -117,17 +77,8 @@ export default async function handler(req, res) {
       });
     }
 
-    /*
-     * Generate the timestamp on the server.
-     * This prevents the user's computer clock from causing
-     * the Apps Script timestamp check to fail.
-     */
     const timestamp = Date.now();
 
-    /*
-     * IMPORTANT:
-     * This object must match the object used in Code.gs.
-     */
     const payloadObject = {
       timestamp,
       xUsername,
@@ -139,7 +90,6 @@ export default async function handler(req, res) {
 
     const payload = JSON.stringify(payloadObject);
 
-    // Create HMAC SHA-256 signature.
     const signature = createHmac(
       'sha256',
       HMAC_SECRET
@@ -152,22 +102,30 @@ export default async function handler(req, res) {
       signature,
     });
 
-    // Send to Google Apps Script and manually preserve POST
-    // through Google's redirect.
-    const googleResponse = await postToGoogleAppsScript(
-      APPS_SCRIPT_URL,
-      requestBody
-    );
+    /*
+     * Google Apps Script web apps redirect the request.
+     *
+     * We let fetch handle Google's redirect instead of manually
+     * POSTing to the redirect destination, which was causing 405.
+     */
+    const googleResponse = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+      redirect: 'follow',
+    });
 
     const responseText = await googleResponse.text();
 
-    if (!googleResponse.ok) {
-      console.error(
-        'Google Apps Script error:',
-        googleResponse.status,
-        responseText
-      );
+    console.log(
+      'Google Apps Script response:',
+      googleResponse.status,
+      responseText
+    );
 
+    if (!googleResponse.ok) {
       return sendJson(res, 502, {
         ok: false,
         error: `Google Apps Script returned HTTP ${googleResponse.status}.`,
@@ -179,18 +137,12 @@ export default async function handler(req, res) {
     try {
       googleData = JSON.parse(responseText);
     } catch {
-      console.error(
-        'Invalid response from Google Apps Script:',
-        responseText
-      );
-
       return sendJson(res, 502, {
         ok: false,
         error: 'Google Apps Script returned an invalid response.',
       });
     }
 
-    // Apps Script itself rejected the submission.
     if (!googleData.ok) {
       return sendJson(res, 400, {
         ok: false,
@@ -198,7 +150,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Everything succeeded.
     return sendJson(res, 200, {
       ok: true,
       success: true,
