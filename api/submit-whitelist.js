@@ -93,12 +93,7 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!likeRt) {
-      return sendJson(res, 400, {
-        ok: false,
-        error: 'Like & RT information is required.',
-      });
-    }
+
 
     if (!quoteTweet) {
       return sendJson(res, 400, {
