@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
-import TaskPage from './TaskPage.jsx'
+import TaskPage from './task/TaskPage.jsx'
 
 const X_URL = 'https://x.com/mossuris'
 const PINNED_POST_URL = X_URL
