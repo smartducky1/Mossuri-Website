@@ -4,7 +4,7 @@ const APPS_SCRIPT_URL =
   process.env.GOOGLE_APPS_SCRIPT_URL;
 
 const HMAC_SECRET =
-  process.env.MOSSURI_TASK_HMAC_SECRET;
+  process.env.MOSSURI_HMAC_SECRET;
 
 function sendJson(res, status, data) {
   res.status(status);
@@ -20,38 +20,27 @@ function sendJson(res, status, data) {
   return res.json(data);
 }
 
-/**
- * Send ONE POST to Google Apps Script.
- *
- * Google Apps Script ContentService returns a redirect.
- * fetch follows that redirect automatically.
+/*
+ * Send one POST to Google Apps Script.
+ * Google Apps Script handles the response redirect.
  */
 async function postToGoogleAppsScript(url, body) {
   return fetch(url, {
     method: 'POST',
-
     headers: {
       'Content-Type': 'application/json',
     },
-
     body,
-
     redirect: 'follow',
   });
 }
 
 export default async function handler(req, res) {
-  /*
-   * Allow browser preflight.
-   */
   if (req.method === 'OPTIONS') {
     res.status(204);
     return res.end();
   }
 
-  /*
-   * This endpoint only accepts POST.
-   */
   if (req.method !== 'POST') {
     return sendJson(res, 405, {
       ok: false,
@@ -59,9 +48,6 @@ export default async function handler(req, res) {
     });
   }
 
-  /*
-   * Check required environment variables.
-   */
   if (!APPS_SCRIPT_URL) {
     return sendJson(res, 500, {
       ok: false,
@@ -72,14 +58,11 @@ export default async function handler(req, res) {
   if (!HMAC_SECRET) {
     return sendJson(res, 500, {
       ok: false,
-      error: 'Task submission security is not configured.',
+      error: 'Submission security is not configured.',
     });
   }
 
   try {
-    /*
-     * Read request body.
-     */
     const body =
       typeof req.body === 'string'
         ? JSON.parse(req.body)
@@ -100,9 +83,6 @@ export default async function handler(req, res) {
     const character =
       String(body.character || '').trim();
 
-    /*
-     * Basic validation.
-     */
     if (!xUsername) {
       return sendJson(res, 400, {
         ok: false,
@@ -140,15 +120,11 @@ export default async function handler(req, res) {
       });
     }
 
-    /*
-     * Create timestamp.
-     */
     const timestamp = Date.now();
 
     /*
-     * IMPORTANT:
-     * This string MUST exactly match
-     * taskSubmissionMessage_() in Code.gs.
+     * MUST match taskSubmissionMessage_()
+     * in Code.gs exactly.
      */
     const message = [
       'task',
@@ -160,9 +136,6 @@ export default async function handler(req, res) {
       character,
     ].join('|');
 
-    /*
-     * Create HMAC signature.
-     */
     const signature = createHmac(
       'sha256',
       HMAC_SECRET.trim()
@@ -170,9 +143,6 @@ export default async function handler(req, res) {
       .update(message, 'utf8')
       .digest('hex');
 
-    /*
-     * Send the task request to Apps Script.
-     */
     const requestBody = JSON.stringify({
       type: 'task',
       timestamp,
@@ -190,17 +160,13 @@ export default async function handler(req, res) {
         requestBody
       );
 
-    /*
-     * Read the final response after the redirect.
-     */
     const responseText =
       await googleResponse.text();
 
     let googleData;
 
     try {
-      googleData =
-        JSON.parse(responseText);
+      googleData = JSON.parse(responseText);
     } catch {
       console.error(
         'Google Apps Script returned non-JSON:',
@@ -214,9 +180,6 @@ export default async function handler(req, res) {
       });
     }
 
-    /*
-     * Pass Apps Script errors back to the frontend.
-     */
     if (!googleData.ok) {
       return sendJson(
         res,
@@ -225,15 +188,11 @@ export default async function handler(req, res) {
       );
     }
 
-    /*
-     * Successful submission.
-     */
     return sendJson(res, 200, {
       ok: true,
       status:
         googleData.status || 'Pending',
     });
-
   } catch (error) {
     console.error(
       'Task submission error:',
