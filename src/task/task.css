@@ -390,7 +390,13 @@ body {
   z-index: 6;
 }
 
-.personality-card img {
+/*
+  IMPORTANT:
+  Target only the main character image.
+  This prevents the download icon image from
+  inheriting these large image dimensions.
+*/
+.personality-card > img {
   width: 100%;
   height: 185px;
 
@@ -433,16 +439,51 @@ body {
   width: 53px;
   height: 34px;
 
+  padding: 0;
+
   border: 2px solid #000;
   border-radius: 8px;
 
   background: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   font-family: Arial, sans-serif;
   font-size: 20px;
   line-height: 1;
 
   cursor: pointer;
+
+  overflow: hidden;
+}
+
+/*
+  Download icon only.
+  It stays small and keeps its proportions.
+*/
+.personality-card > button img {
+  width: 25px !important;
+  height: 25px !important;
+
+  min-width: 25px !important;
+  min-height: 25px !important;
+
+  max-width: 25px !important;
+  max-height: 25px !important;
+
+  display: block !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  object-fit: contain !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+
+  flex: 0 0 25px !important;
 }
 
 /* =========================================================
