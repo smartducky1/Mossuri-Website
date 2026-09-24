@@ -88,7 +88,7 @@ export default function TaskPage() {
           setApproved(data.approved.slice(0, 10))
         }
       } catch {
-        // Keep the page usable if leaderboard loading fails.
+        // Keep the page usable if the leaderboard request fails.
       }
     }
 
@@ -126,9 +126,7 @@ export default function TaskPage() {
 
     try {
       const response = await fetch(
-        `/api/task-status?wallet=${encodeURIComponent(
-          walletValue
-        )}`,
+        `/api/task-status?wallet=${encodeURIComponent(walletValue)}`,
         {
           cache: 'no-store',
         }
@@ -232,7 +230,10 @@ export default function TaskPage() {
         <button
           type="button"
           onClick={() =>
-            setIndex((index + characters.length - 1) % characters.length)
+            setIndex(
+              (index + characters.length - 1) %
+                characters.length
+            )
           }
           aria-label="Previous character"
         >
@@ -249,7 +250,9 @@ export default function TaskPage() {
         <button
           type="button"
           onClick={() =>
-            setIndex((index + 1) % characters.length)
+            setIndex(
+              (index + 1) % characters.length
+            )
           }
           aria-label="Next character"
         >
@@ -290,11 +293,7 @@ export default function TaskPage() {
 
         {checkResult && (
           <div
-            className={`status-result ${
-              checkResult
-                .toLowerCase()
-                .replace(/\s+/g, '-')
-            }`}
+            className="status-result"
             role="status"
             aria-live="polite"
           >
@@ -459,10 +458,10 @@ export default function TaskPage() {
           </div>
 
           <div className="tbody">
-            {approved.map((applicant, index) => (
+            {approved.map((applicant, rowIndex) => (
               <div
                 className="tr"
-                key={`${applicant.wallet}-${index}`}
+                key={`${applicant.wallet}-${rowIndex}`}
               >
                 <span>{applicant.username}</span>
                 <span>{applicant.wallet}</span>
@@ -509,6 +508,7 @@ export default function TaskPage() {
       {submitted && (
         <div className="success-overlay">
           <div className="success-modal">
+
             <button
               className="close"
               onClick={() => setSubmitted(false)}
@@ -536,6 +536,7 @@ export default function TaskPage() {
             >
               Awesome!
             </button>
+
           </div>
         </div>
       )}
