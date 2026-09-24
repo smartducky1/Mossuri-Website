@@ -19,35 +19,28 @@ body {
 }
 
 .task-page {
-  /*
-    Desktop design canvas.
-
-    The reference artwork is 1728px wide.
-    The actual visible composition ends around 980px high,
-    so we scale using 980px rather than the unused extra
-    vertical space from the original canvas.
-  */
   --desktop-scale: min(
     calc(100vw / 1728px),
-    calc(100vh / 980px)
+    calc(100vh / 1117px)
   );
 
+  /*
+    Desktop uses a fixed 1728 x 1117 design canvas and scales the
+    whole composition uniformly to fit the viewport. This preserves
+    the exact spacing/proportions from the supplied Figma reference.
+  */
   position: absolute;
-
   left: 50%;
-  top: 0;
+  top: 50%;
 
   width: 1728px;
-  height: 980px;
+  height: 1117px;
 
   margin: 0;
   padding: 0;
 
-  transform:
-    translateX(-50%)
-    scale(var(--desktop-scale));
-
-  transform-origin: top center;
+  transform: translate(-50%, -50%) scale(var(--desktop-scale));
+  transform-origin: center center;
 
   overflow: hidden;
 
@@ -65,6 +58,7 @@ body {
 
 /* =========================================================
    CHARACTER CAROUSEL
+   Figma reference: approx x157 y59 w348 h246
    ========================================================= */
 
 .character-carousel {
@@ -132,6 +126,7 @@ body {
 
 /* =========================================================
    CHECK STATUS
+   Figma reference: approx x840 y139
    ========================================================= */
 
 .status-area {
@@ -208,6 +203,7 @@ body {
 
 /* =========================================================
    TASK FORM
+   Figma reference: approx x70 y333 w511 h623
    ========================================================= */
 
 .task-card {
@@ -367,6 +363,8 @@ body {
 
 /* =========================================================
    PERSONALITY CARD
+   Figma reference: approx x589 y447 w227 h245
+   Sits immediately beside the task card.
    ========================================================= */
 
 .personality-card {
@@ -424,11 +422,7 @@ body {
   font-size: 18px;
 }
 
-/* =========================================================
-   DOWNLOAD BUTTON
-   ========================================================= */
-
-.personality-card > button.character-download {
+.personality-card > button {
   position: absolute;
 
   left: 50%;
@@ -439,31 +433,21 @@ body {
   width: 53px;
   height: 34px;
 
-  padding: 0;
-
   border: 2px solid #000;
   border-radius: 8px;
 
   background: #fff;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1;
 
   cursor: pointer;
 }
 
-.personality-card > button.character-download img {
-  width: 25px;
-  height: 25px;
-
-  display: block;
-
-  object-fit: contain;
-}
-
 /* =========================================================
    LEADERBOARD
+   Figma reference: approx x979 y334 w508 h639
    ========================================================= */
 
 .leaderboard {
@@ -556,7 +540,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-
   gap: 8px;
 }
 
@@ -649,6 +632,7 @@ body {
 
 /* =========================================================
    MOBILE
+   Desktop canvas is replaced by a normal responsive stack.
    ========================================================= */
 
 @media (max-width: 900px) {
@@ -776,7 +760,6 @@ body {
   .character-window {
     width: 105px;
     height: 105px;
-
     border-width: 6px;
   }
 
