@@ -1,35 +1,18 @@
-import {
-  createHmac,
-  createHash,
-} from 'node:crypto';
+import { createHmac } from 'node:crypto';
 
-console.log(
-  'MOSSURI_HMAC_SECRET fingerprint:',
-  HMAC_SECRET
-    ? createHash('sha256')
-        .update(HMAC_SECRET.trim(), 'utf8')
-        .digest('hex')
-    : 'MISSING'
-);
+const APPS_SCRIPT_URL =
+  process.env.GOOGLE_APPS_SCRIPT_URL;
+
+const HMAC_SECRET =
+  process.env.MOSSURI_HMAC_SECRET;
 
 function sendJson(res, status, data) {
   res.status(status);
-  res.setHeader(
-    'Content-Type',
-    'application/json'
-  );
-  res.setHeader(
-    'Cache-Control',
-    'no-store'
-  );
-
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
   return res.json(data);
 }
 
-/*
- * Send one POST to Google Apps Script.
- * Google Apps Script handles the response redirect.
- */
 async function postToGoogleAppsScript(url, body) {
   return fetch(url, {
     method: 'POST',
@@ -74,20 +57,25 @@ export default async function handler(req, res) {
         ? JSON.parse(req.body)
         : req.body || {};
 
-    const xUsername =
-      String(body.xUsername || '').trim();
+    const xUsername = String(
+      body.xUsername || ''
+    ).trim();
 
-    const quoteTweet =
-      String(body.quoteTweet || '').trim();
+    const quoteTweet = String(
+      body.quoteTweet || ''
+    ).trim();
 
-    const tagFriends =
-      String(body.tagFriends || '').trim();
+    const tagFriends = String(
+      body.tagFriends || ''
+    ).trim();
 
-    const wallet =
-      String(body.wallet || '').trim();
+    const wallet = String(
+      body.wallet || ''
+    ).trim();
 
-    const character =
-      String(body.character || '').trim();
+    const character = String(
+      body.character || ''
+    ).trim();
 
     if (!xUsername) {
       return sendJson(res, 400, {
@@ -117,9 +105,7 @@ export default async function handler(req, res) {
       });
     }
 
-    if (
-      !['Hyper', 'Smart', 'Goofy'].includes(character)
-    ) {
+    if (!['Hyper', 'Smart', 'Goofy'].includes(character)) {
       return sendJson(res, 400, {
         ok: false,
         error: 'Invalid character.',
@@ -128,10 +114,6 @@ export default async function handler(req, res) {
 
     const timestamp = Date.now();
 
-    /*
-     * MUST match taskSubmissionMessage_()
-     * in Code.gs exactly.
-     */
     const message = [
       'task',
       String(timestamp),
@@ -187,17 +169,12 @@ export default async function handler(req, res) {
     }
 
     if (!googleData.ok) {
-      return sendJson(
-        res,
-        400,
-        googleData
-      );
+      return sendJson(res, 400, googleData);
     }
 
     return sendJson(res, 200, {
       ok: true,
-      status:
-        googleData.status || 'Pending',
+      status: googleData.status || 'Pending',
     });
   } catch (error) {
     console.error(
