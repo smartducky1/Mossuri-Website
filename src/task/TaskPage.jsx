@@ -19,33 +19,33 @@ const characters = [
   },
 ]
 
-function validUsername(v) {
+function validUsername(value) {
   return /^[A-Za-z0-9_]{1,15}$/.test(
-    v.trim().replace(/^@/, '')
+    value.trim().replace(/^@/, '')
   )
 }
 
-function validWallet(v) {
-  return /^0x[a-fA-F0-9]{40}$/.test(v.trim())
+function validWallet(value) {
+  return /^0x[a-fA-F0-9]{40}$/.test(value.trim())
 }
 
-function validXUrl(v) {
+function validXUrl(value) {
   try {
-    const u = new URL(v.trim())
+    const url = new URL(value.trim())
 
-    const host = u.hostname
+    const host = url.hostname
       .toLowerCase()
       .replace(/^www\./, '')
 
-    const p = u.pathname
+    const parts = url.pathname
       .split('/')
       .filter(Boolean)
 
     return (
       (host === 'x.com' || host === 'twitter.com') &&
-      p.length >= 3 &&
-      p[1] === 'status' &&
-      /^\d+$/.test(p[2])
+      parts.length >= 3 &&
+      parts[1].toLowerCase() === 'status' &&
+      /^\d+$/.test(parts[2])
     )
   } catch {
     return false
@@ -66,6 +66,7 @@ export default function TaskPage() {
 
   const [checkWallet, setCheckWallet] = useState('')
   const [checkResult, setCheckResult] = useState('')
+  const [checkingStatus, setCheckingStatus] = useState(false)
 
   const [approved, setApproved] = useState([])
 
@@ -74,57 +75,57 @@ export default function TaskPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const r = await fetch('/api/task-approved', {
+        const response = await fetch('/api/task-approved', {
           cache: 'no-store',
         })
 
-        const d = await r.json()
+        const data = await response.json()
 
         if (
-          r.ok &&
-          Array.isArray(d.approved)
+          response.ok &&
+          Array.isArray(data.approved)
         ) {
-          setApproved(
-            d.approved.slice(0, 10)
-          )
+          setApproved(data.approved.slice(0, 10))
         }
-      } catch {}
+      } catch {
+        // Keep the page usable if leaderboard loading fails.
+      }
     }
 
     load()
 
-    const id = setInterval(
-      load,
-      15000
-    )
+    const intervalId = setInterval(load, 15000)
 
-    return () => clearInterval(id)
+    return () => clearInterval(intervalId)
   }, [])
 
   const download = () => {
-    const a = document.createElement('a')
+    const link = document.createElement('a')
 
-    a.href = character.image
-    a.download = `${character.name}.png`
+    link.href = character.image
+    link.download = `${character.name}.png`
 
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
-  const checkStatus = async e => {
-    e.preventDefault()
-
-    setCheckResult('')
+  const checkStatus = async event => {
+    event.preventDefault()
 
     const walletValue = checkWallet.trim()
 
+    setCheckResult('')
+
     if (!validWallet(walletValue)) {
-      return setCheckResult('INVALID WALLET')
+      setCheckResult('INVALID WALLET')
+      return
     }
 
+    setCheckingStatus(true)
+
     try {
-      const r = await fetch(
+      const response = await fetch(
         `/api/task-status?wallet=${encodeURIComponent(
           walletValue
         )}`,
@@ -133,85 +134,80 @@ export default function TaskPage() {
         }
       )
 
-      const d = await r.json()
+      const data = await response.json().catch(() => ({}))
 
-      if (!r.ok) {
+      if (!response.ok) {
         setCheckResult(
-          d.status
-            ? String(d.status).toUpperCase()
+          data.status
+            ? String(data.status).toUpperCase()
             : 'ERROR'
         )
         return
       }
 
       setCheckResult(
-        d.status
-          ? String(d.status).toUpperCase()
+        data.status
+          ? String(data.status).toUpperCase()
           : 'NOT FOUND'
       )
     } catch {
       setCheckResult('ERROR')
+    } finally {
+      setCheckingStatus(false)
     }
   }
 
-  const submit = async e => {
-    e.preventDefault()
+  const submit = async event => {
+    event.preventDefault()
 
-    const next = {}
+    const nextErrors = {}
 
     if (!validUsername(xUser)) {
-      next.xUser = 'Invalid X username'
+      nextErrors.xUser = 'Invalid X username'
     }
 
     if (!validXUrl(quote)) {
-      next.quote = 'Invalid X post URL'
+      nextErrors.quote = 'Invalid X post URL'
     }
 
     if (!validXUrl(tags)) {
-      next.tags = 'Invalid X comment URL'
+      nextErrors.tags = 'Invalid X comment URL'
     }
 
     if (!validWallet(wallet)) {
-      next.wallet = 'Invalid EVM wallet'
+      nextErrors.wallet = 'Invalid EVM wallet'
     }
 
-    setErrors(next)
+    setErrors(nextErrors)
     setServerError('')
 
-    if (
-      Object.keys(next).length
-    ) {
+    if (Object.keys(nextErrors).length > 0) {
       return
     }
 
     try {
-      const r = await fetch(
-        '/api/submit-task',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            xUsername: xUser,
-            quoteTweet: quote,
-            tagFriends: tags,
-            wallet,
-            character:
-              character.name,
-          }),
-        }
-      )
+      const response = await fetch('/api/submit-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          xUsername: xUser,
+          quoteTweet: quote,
+          tagFriends: tags,
+          wallet,
+          character: character.name,
+        }),
+      })
 
-      const d = await r.json()
-        .catch(() => ({}))
+      const data = await response.json().catch(() => ({}))
 
-      if (!r.ok || !d.ok) {
-        return setServerError(
-          d.error ||
+      if (!response.ok || !data.ok) {
+        setServerError(
+          data.error ||
             'We could not save your application.'
         )
+        return
       }
 
       setXUser('')
@@ -219,6 +215,7 @@ export default function TaskPage() {
       setTags('')
       setWallet('')
       setErrors({})
+      setServerError('')
       setSubmitted(true)
     } catch {
       setServerError(
@@ -232,15 +229,12 @@ export default function TaskPage() {
 
       {/* CHARACTER CAROUSEL */}
       <section className="character-carousel">
-
         <button
-          onClick={() =>
-            setIndex(
-              (index + 2) % 3
-            )
-          }
-          aria-label="Previous"
           type="button"
+          onClick={() =>
+            setIndex((index + characters.length - 1) % characters.length)
+          }
+          aria-label="Previous character"
         >
           ◀
         </button>
@@ -253,83 +247,77 @@ export default function TaskPage() {
         </div>
 
         <button
-          onClick={() =>
-            setIndex(
-              (index + 1) % 3
-            )
-          }
-          aria-label="Next"
           type="button"
+          onClick={() =>
+            setIndex((index + 1) % characters.length)
+          }
+          aria-label="Next character"
         >
           ▶
         </button>
-
       </section>
 
       {/* CHECK STATUS */}
       <section className="status-area">
-
         <form
-          onSubmit={checkStatus}
           className="status-check"
+          onSubmit={checkStatus}
+          noValidate
         >
           <div className="status-check-box">
-
             <input
               value={checkWallet}
-              onChange={e =>
-                setCheckWallet(
-                  e.target.value
-                )
+              onChange={event =>
+                setCheckWallet(event.target.value)
               }
               placeholder="Paste EVM"
               spellCheck="false"
               autoComplete="off"
+              aria-label="EVM wallet"
             />
 
             <button
               type="submit"
               className="status-check-button"
+              disabled={checkingStatus}
             >
-              Check status
+              {checkingStatus
+                ? 'Checking...'
+                : 'Check status'}
             </button>
-
           </div>
         </form>
 
         {checkResult && (
           <div
-            className={`status-result ${checkResult
-              .toLowerCase()
-              .replace(/\s+/g, '-')}`}
+            className={`status-result ${
+              checkResult
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+            }`}
+            role="status"
+            aria-live="polite"
           >
             {checkResult}
           </div>
         )}
-
       </section>
 
       {/* TASK FORM */}
       <section className="task-card">
-
-        <form onSubmit={submit}>
+        <form onSubmit={submit} noValidate>
 
           <div className="task-row">
-
-            <label>
-              Follow X
-            </label>
+            <label>Follow X</label>
 
             <div className="dark-row">
-
               <input
                 value={xUser}
-                onChange={e =>
-                  setXUser(
-                    e.target.value
-                  )
+                onChange={event =>
+                  setXUser(event.target.value)
                 }
                 placeholder="Drop your X username"
+                autoComplete="off"
               />
 
               <a
@@ -339,25 +327,17 @@ export default function TaskPage() {
               >
                 Follow
               </a>
-
             </div>
 
             {errors.xUser && (
-              <small>
-                {errors.xUser}
-              </small>
+              <small>{errors.xUser}</small>
             )}
-
           </div>
 
           <div className="task-row">
-
-            <label>
-              Like and RT pinned post
-            </label>
+            <label>Like and RT pinned post</label>
 
             <div className="dark-row single">
-
               <a
                 href="https://x.com/mossuris"
                 target="_blank"
@@ -365,94 +345,69 @@ export default function TaskPage() {
               >
                 GO
               </a>
-
             </div>
-
           </div>
 
           <div className="task-row">
-
             <label>
               QT pinned post with your selected character
             </label>
 
             <div className="dark-row">
-
               <input
                 value={quote}
-                onChange={e =>
-                  setQuote(
-                    e.target.value
-                  )
+                onChange={event =>
+                  setQuote(event.target.value)
                 }
                 placeholder="Link to QT https://x.com/status....."
+                autoComplete="off"
               />
-
             </div>
 
             {errors.quote && (
-              <small>
-                {errors.quote}
-              </small>
+              <small>{errors.quote}</small>
             )}
-
           </div>
 
           <div className="task-row">
-
             <label>
               Tag 3 friends in pinned post comment
             </label>
 
             <div className="dark-row">
-
               <input
                 value={tags}
-                onChange={e =>
-                  setTags(
-                    e.target.value
-                  )
+                onChange={event =>
+                  setTags(event.target.value)
                 }
                 placeholder="Link to comment https://x.com/status....."
+                autoComplete="off"
               />
-
             </div>
 
             {errors.tags && (
-              <small>
-                {errors.tags}
-              </small>
+              <small>{errors.tags}</small>
             )}
-
           </div>
 
           <div className="task-row">
-
-            <label>
-              Submit EVM wallet
-            </label>
+            <label>Submit EVM wallet</label>
 
             <div className="dark-row">
-
               <input
                 value={wallet}
-                onChange={e =>
-                  setWallet(
-                    e.target.value
-                  )
+                onChange={event =>
+                  setWallet(event.target.value)
                 }
                 placeholder="0x........"
                 spellCheck="false"
+                autoComplete="off"
               />
-
             </div>
 
             {errors.wallet && (
-              <small>
-                {errors.wallet}
-              </small>
+              <small>{errors.wallet}</small>
             )}
-
           </div>
 
           {serverError && (
@@ -467,27 +422,19 @@ export default function TaskPage() {
           >
             REGISTER
           </button>
-
         </form>
-
       </section>
 
       {/* PERSONALITY CARD */}
       <section className="personality-card">
-
         <img
           src={character.image}
           alt={character.name}
         />
 
         <div>
-          <span>
-            Personality
-          </span>
-
-          <strong>
-            {character.personality}
-          </strong>
+          <span>Personality</span>
+          <strong>{character.personality}</strong>
         </div>
 
         <button
@@ -496,120 +443,75 @@ export default function TaskPage() {
           aria-label="Download character"
           type="button"
         >
-          <span aria-hidden="true">
-            ⇩
-          </span>
+          <span aria-hidden="true">⇩</span>
         </button>
-
       </section>
 
       {/* LEADERBOARD */}
       <section className="leaderboard">
-
-        <h2>
-          Approved Mossuris
-        </h2>
+        <h2>Approved Mossuris</h2>
 
         <div className="table">
-
           <div className="thead">
-
-            <span>
-              Username
-            </span>
-
-            <span>
-              Wallet
-            </span>
-
-            <span>
-              Status
-            </span>
-
+            <span>Username</span>
+            <span>Wallet</span>
+            <span>Status</span>
           </div>
 
           <div className="tbody">
-
-            {approved.map(
-              (a, i) => (
-                <div
-                  className="tr"
-                  key={`${a.wallet}-${i}`}
-                >
-
-                  <span>
-                    {a.username}
-                  </span>
-
-                  <span>
-                    {a.wallet}
-                  </span>
-
-                  <span>
-                    {a.status}
-                  </span>
-
-                </div>
-              )
-            )}
-
+            {approved.map((applicant, index) => (
+              <div
+                className="tr"
+                key={`${applicant.wallet}-${index}`}
+              >
+                <span>{applicant.username}</span>
+                <span>{applicant.wallet}</span>
+                <span>{applicant.status}</span>
+              </div>
+            ))}
           </div>
-
         </div>
 
         <div className="scroll-buttons">
-
           <button
+            type="button"
             onClick={() =>
               document
-                .querySelector(
-                  '.tbody'
-                )
+                .querySelector('.tbody')
                 ?.scrollBy({
                   top: -180,
-                  behavior:
-                    'smooth',
+                  behavior: 'smooth',
                 })
             }
-            type="button"
             aria-label="Scroll leaderboard up"
           >
             ▲
           </button>
 
           <button
+            type="button"
             onClick={() =>
               document
-                .querySelector(
-                  '.tbody'
-                )
+                .querySelector('.tbody')
                 ?.scrollBy({
                   top: 180,
-                  behavior:
-                    'smooth',
+                  behavior: 'smooth',
                 })
             }
-            type="button"
             aria-label="Scroll leaderboard down"
           >
             ▼
           </button>
-
         </div>
-
       </section>
 
       {/* SUCCESS POPUP */}
       {submitted && (
         <div className="success-overlay">
-
           <div className="success-modal">
-
             <button
               className="close"
-              onClick={() =>
-                setSubmitted(false)
-              }
+              onClick={() => setSubmitted(false)}
               type="button"
               aria-label="Close"
             >
@@ -625,25 +527,18 @@ export default function TaskPage() {
               Your Application have been received!
             </h2>
 
-            <p>
-              Approval Pending.
-            </p>
+            <p>Approval Pending.</p>
 
             <button
               className="register"
-              onClick={() =>
-                setSubmitted(false)
-              }
+              onClick={() => setSubmitted(false)}
               type="button"
             >
               Awesome!
             </button>
-
           </div>
-
         </div>
       )}
-
     </main>
   )
 }
