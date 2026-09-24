@@ -17,97 +17,110 @@ body {
 }
 
 .task-page {
+  position: relative;
   width: 100%;
-  height: 100svh;
-  min-height: 720px;
-  padding: 3vh 4vw;
+  height: 100vh;
+  min-height: 700px;
+  overflow: hidden;
+
   background: #bce900;
   color: #000;
   font-family: 'Skranji', cursive;
-  position: relative;
-  overflow: hidden;
+}
 
-  display: grid;
-  grid-template-columns: 36% 22% 36%;
-  grid-template-rows: 40% 55%;
-  column-gap: 3%;
-  row-gap: 5%;
+.task-page button,
+.task-page input,
+.task-page a {
+  font-family: inherit;
 }
 
 /* =========================================================
    CHARACTER SELECTOR
+   Figma: approx x157 / y59 / 348x246
    ========================================================= */
 
 .character-carousel {
-  grid-column: 1;
-  grid-row: 1;
+  position: absolute;
 
-  width: min(100%, 430px);
-  height: min(100%, 280px);
+  left: 9.1vw;
+  top: 5.3vh;
+
+  width: 20.1vw;
+  height: 22vh;
+
+  max-width: 348px;
+  max-height: 246px;
 
   background: #fff;
+
   border: 6px solid #000;
   border-radius: 38px;
+
   box-shadow: 0 7px 0 #000;
 
   display: flex;
   align-items: center;
   justify-content: space-around;
-
-  align-self: start;
-  justify-self: center;
 }
 
 .character-carousel > button {
-  width: 55px;
-  height: 70px;
+  width: 50px;
+  height: 65px;
+
+  padding: 0;
 
   border: 0;
   background: transparent;
+
+  color: #000;
 
   font-family: Arial, sans-serif;
   font-size: 42px;
   font-weight: 900;
 
   cursor: pointer;
-  color: #000;
 }
 
 .character-window {
-  width: clamp(125px, 11vw, 175px);
-  aspect-ratio: 1;
+  width: 8.5vw;
+  height: 11.8vh;
+
+  max-width: 147px;
+  max-height: 132px;
+
+  min-width: 105px;
+  min-height: 105px;
 
   border: 7px solid #000;
-  border-radius: 24px;
+  border-radius: 23px;
 
   overflow: hidden;
+
   background: #dfffd7;
-  flex-shrink: 0;
 }
 
 .character-window img {
   width: 100%;
   height: 100%;
+
   display: block;
+
   object-fit: cover;
 }
 
 /* =========================================================
    CHECK STATUS
+   Figma: label around x840 / input x1127
    ========================================================= */
 
 .status-area {
-  grid-column: 2 / 4;
-  grid-row: 1;
+  position: absolute;
 
-  width: 100%;
-  align-self: start;
+  left: 48.6vw;
+  top: 12.5vh;
 
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-
-  padding-top: 20px;
+  width: 47vw;
+  height: 100px;
 }
 
 .status-check {
@@ -116,69 +129,91 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 24px;
+
+  gap: 25px;
 }
 
 .status-check span {
-  font-size: clamp(27px, 2.6vw, 45px);
+  font-size: clamp(28px, 2.55vw, 44px);
+
   white-space: nowrap;
 }
 
 .status-check input {
-  width: clamp(270px, 25vw, 420px);
-  height: clamp(70px, 8vw, 105px);
+  width: 19.7vw;
+  height: 8.8vh;
+
+  max-width: 341px;
+  max-height: 98px;
+
+  min-width: 260px;
+  min-height: 70px;
 
   border: 6px solid #000;
   border-radius: 25px;
 
-  padding: 0 22px;
-
-  font-family: inherit;
-  font-size: clamp(20px, 1.7vw, 29px);
+  padding: 0 25px;
 
   background: #fff;
   color: #000;
 
   outline: none;
+
+  font-size: clamp(20px, 1.65vw, 29px);
 }
 
 .status-check input::placeholder {
-  color: #8b8b8b;
+  color: #858585;
 }
 
 .status-result {
   position: absolute;
-  right: 4vw;
-  top: 145px;
 
-  background: #fff;
-  border: 4px solid #000;
-  border-radius: 15px;
+  right: 0;
+  top: 110px;
+
   padding: 10px 20px;
 
+  background: #fff;
+
+  border: 4px solid #000;
+  border-radius: 14px;
+
   font-size: 20px;
+
   box-shadow: 4px 4px #000;
-  z-index: 20;
+
+  z-index: 30;
 }
 
 /* =========================================================
    TASK FORM
+   Figma: approx x70 / y333 / 511x623
    ========================================================= */
 
 .task-card {
-  grid-column: 1;
-  grid-row: 2;
+  position: absolute;
 
-  width: 100%;
-  height: 100%;
+  left: 4.05vw;
+  top: 29.8vh;
+
+  width: 29.6vw;
+  height: 55.8vh;
+
+  max-width: 511px;
+  max-height: 623px;
+
+  min-width: 450px;
+  min-height: 570px;
+
+  padding: 17px 28px 24px;
 
   background: #fff;
 
   border: 6px solid #000;
   border-radius: 35px;
-  box-shadow: 0 7px 0 #000;
 
-  padding: 18px 25px;
+  box-shadow: 0 7px 0 #000;
 
   overflow: hidden;
 }
@@ -189,6 +224,7 @@ body {
 
   display: flex;
   flex-direction: column;
+
   justify-content: space-between;
 }
 
@@ -199,19 +235,20 @@ body {
 .task-row label {
   display: block;
 
-  margin: 0 0 6px 12px;
+  margin: 0 0 6px 13px;
 
-  font-size: clamp(13px, 1vw, 18px);
+  font-size: clamp(13px, 0.95vw, 17px);
 }
 
 .dark-row {
   width: 100%;
-  min-height: 48px;
+  min-height: 58px;
+
+  padding: 8px;
 
   background: #000;
-  border-radius: 15px;
 
-  padding: 7px;
+  border-radius: 15px;
 
   display: flex;
   align-items: center;
@@ -220,25 +257,32 @@ body {
 
 .dark-row input {
   flex: 1;
+
   min-width: 0;
 
-  height: 38px;
+  height: 42px;
 
   border: 0;
   border-radius: 10px;
 
-  padding: 0 12px;
+  padding: 0 14px;
 
-  font-family: inherit;
-  font-size: clamp(11px, 0.8vw, 14px);
-
-  outline: none;
   background: #fff;
   color: #000;
+
+  outline: none;
+
+  font-size: 12px;
+}
+
+.dark-row input::placeholder {
+  color: #8b8b8b;
 }
 
 .dark-row a {
-  height: 38px;
+  height: 42px;
+
+  padding: 0 19px;
 
   display: flex;
   align-items: center;
@@ -249,11 +293,9 @@ body {
 
   border-radius: 10px;
 
-  padding: 0 18px;
-
   text-decoration: none;
 
-  font-size: clamp(11px, 0.8vw, 14px);
+  font-size: 14px;
 
   white-space: nowrap;
 }
@@ -262,55 +304,70 @@ body {
   justify-content: flex-end;
 }
 
+.single a {
+  min-width: 90px;
+}
+
 .task-row small {
   display: block;
+
   margin: 4px 0 0 10px;
+
   color: #a00000;
+
   font-size: 11px;
 }
 
 .server-error {
   margin: 4px 0;
+
   text-align: center;
+
   color: #a00000;
-  font-size: 13px;
+
+  font-size: 12px;
 }
 
 .register {
+  display: block;
+
+  margin: 6px auto 0;
+
+  padding: 12px 45px;
+
   border: 0;
+  border-radius: 14px;
 
   background: #000;
   color: #fff;
 
-  border-radius: 13px;
-
-  padding: 11px 42px;
-
   font-family: inherit;
-  font-size: clamp(14px, 1vw, 18px);
+  font-size: 17px;
 
   cursor: pointer;
-
-  display: block;
-  margin: 5px auto 0;
-}
-
-.register:hover {
-  transform: translateY(-1px);
 }
 
 /* =========================================================
    PERSONALITY CARD
+   Figma: approx x589 / y447 / 227x245
    ========================================================= */
 
 .personality-card {
-  grid-column: 2;
-  grid-row: 2;
+  position: absolute;
 
-  width: min(100%, 250px);
+  left: 34.1vw;
+  top: 40%;
 
-  align-self: start;
-  justify-self: center;
+  width: 13.15vw;
+  height: 21.9vh;
+
+  max-width: 227px;
+  max-height: 245px;
+
+  min-width: 200px;
+  min-height: 220px;
+
+  padding: 7px;
 
   background: #ddd;
 
@@ -319,14 +376,12 @@ body {
 
   box-shadow: 0 5px 0 #000;
 
-  padding: 8px;
-
   text-align: center;
 }
 
 .personality-card img {
   width: 100%;
-  aspect-ratio: 1;
+  height: calc(100% - 48px);
 
   display: block;
 
@@ -337,69 +392,84 @@ body {
 }
 
 .personality-card div {
+  height: 28px;
+
   display: flex;
-  justify-content: space-around;
   align-items: center;
+  justify-content: space-between;
 
-  gap: 5px;
+  padding: 0 8px;
 
-  font-size: 13px;
-
-  margin: 7px 2px;
-}
-
-.personality-card div span {
-  font-size: 12px;
-}
-
-.personality-card div strong {
   font-size: 14px;
 }
 
+.personality-card div span {
+  font-size: 13px;
+}
+
+.personality-card div strong {
+  font-size: 18px;
+}
+
 .personality-card > button {
+  position: absolute;
+
+  left: 50%;
+  bottom: 5px;
+
+  transform: translateX(-50%);
+
+  width: 52px;
+  height: 34px;
+
   border: 2px solid #000;
+  border-radius: 8px;
 
   background: #fff;
 
-  border-radius: 8px;
-
-  width: 48px;
-  height: 32px;
-
   font-family: Arial, sans-serif;
-  font-size: 19px;
+  font-size: 20px;
 
   cursor: pointer;
 }
 
 /* =========================================================
    LEADERBOARD
+   Figma: approx x979 / y334 / 508x638
    ========================================================= */
 
 .leaderboard {
-  grid-column: 3;
-  grid-row: 2;
+  position: absolute;
 
-  width: 100%;
+  left: 56.65vw;
+  top: 29.9vh;
 
-  align-self: start;
+  width: 29.4vw;
+  height: 57.1vh;
+
+  max-width: 508px;
+  max-height: 638px;
+
+  min-width: 450px;
+  min-height: 570px;
 }
 
 .leaderboard h2 {
+  margin: 0 0 9px;
+
   text-align: center;
 
-  font-size: clamp(24px, 2.2vw, 38px);
-
-  margin: 0 0 10px;
+  font-size: clamp(26px, 2.15vw, 38px);
 }
 
 .table {
   width: 100%;
+  height: calc(100% - 60px);
 
   background: #fff;
 
   border: 5px solid #000;
-  border-radius: 30px;
+  border-radius: 31px;
 
   overflow: hidden;
 
@@ -409,24 +479,27 @@ body {
 .thead,
 .tr {
   display: grid;
-  grid-template-columns: 1fr 1.35fr 0.9fr;
+
+  grid-template-columns: 1fr 1.3fr 0.9fr;
 }
 
 .thead span,
 .tr span {
   min-width: 0;
 
-  padding: 13px 7px;
+  padding: 14px 7px;
 
   border-right: 4px solid #000;
   border-bottom: 4px solid #000;
 
   text-align: center;
 
-  font-size: clamp(12px, 0.95vw, 17px);
+  font-size: clamp(13px, 1vw, 18px);
 
   white-space: nowrap;
+
   overflow: hidden;
+
   text-overflow: ellipsis;
 }
 
@@ -436,7 +509,8 @@ body {
 }
 
 .tbody {
-  max-height: 275px;
+  height: calc(100% - 57px);
+
   overflow-y: auto;
 }
 
@@ -445,21 +519,21 @@ body {
 }
 
 .scroll-buttons {
+  margin-top: 11px;
+
   text-align: center;
-  margin-top: 13px;
 }
 
 .scroll-buttons button {
-  border: 3px solid #000;
-
-  background: #fff;
-
-  border-radius: 10px;
-
   width: 45px;
-  height: 37px;
+  height: 38px;
 
   margin: 0 4px;
+
+  border: 3px solid #000;
+  border-radius: 10px;
+
+  background: #fff;
 
   font-family: Arial, sans-serif;
   font-weight: bold;
@@ -475,20 +549,22 @@ body {
   position: fixed;
   inset: 0;
 
-  background: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
 
   display: grid;
   place-items: center;
 
-  z-index: 100;
-
   padding: 20px;
+
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .success-modal {
   position: relative;
 
   width: min(500px, 94vw);
+
+  padding: 25px;
 
   background: #fff;
 
@@ -498,8 +574,6 @@ body {
   box-shadow: 0 8px #000;
 
   text-align: center;
-
-  padding: 25px;
 }
 
 .success-modal img {
@@ -512,13 +586,15 @@ body {
 }
 
 .success-modal h2 {
-  font-size: 28px;
   margin: 15px 0 8px;
+
+  font-size: 28px;
 }
 
 .success-modal p {
-  font-size: 22px;
   margin: 0;
+
+  font-size: 22px;
 }
 
 .close {
@@ -537,22 +613,25 @@ body {
 }
 
 /* =========================================================
-   LAPTOP / SMALL DESKTOP
+   SMALL DESKTOP
    ========================================================= */
 
-@media (max-width: 1200px) {
-  .task-page {
-    padding: 25px 30px;
-    grid-template-columns: 35% 23% 35%;
-    column-gap: 3.5%;
+@media (max-width: 1200px) and (min-width: 901px) {
+  .task-card {
+    min-width: 0;
   }
 
-  .character-carousel {
-    height: 230px;
+  .leaderboard {
+    min-width: 0;
+  }
+
+  .personality-card {
+    min-width: 170px;
   }
 
   .character-window {
-    width: 125px;
+    min-width: 85px;
+    min-height: 85px;
   }
 
   .status-check {
@@ -560,15 +639,7 @@ body {
   }
 
   .status-check input {
-    width: 280px;
-  }
-
-  .task-card {
-    padding: 15px 20px;
-  }
-
-  .tbody {
-    max-height: 245px;
+    min-width: 220px;
   }
 }
 
@@ -578,8 +649,10 @@ body {
 
 @media (max-width: 900px) {
   .task-page {
+    position: relative;
+
     height: auto;
-    min-height: 100svh;
+    min-height: 100vh;
 
     overflow-y: auto;
 
@@ -587,7 +660,6 @@ body {
 
     display: flex;
     flex-direction: column;
-
     gap: 22px;
   }
 
@@ -598,15 +670,16 @@ body {
   .leaderboard {
     position: relative;
 
-    grid-column: auto;
-    grid-row: auto;
+    left: auto;
+    top: auto;
 
     width: 100%;
-    max-width: 600px;
+    height: auto;
 
-    left: auto;
-    right: auto;
-    top: auto;
+    min-width: 0;
+    min-height: 0;
+
+    max-width: 600px;
 
     margin: 0 auto;
   }
@@ -616,7 +689,7 @@ body {
   }
 
   .status-area {
-    padding-top: 0;
+    padding: 0;
   }
 
   .status-check {
@@ -624,69 +697,60 @@ body {
     gap: 10px;
   }
 
-  .status-check span {
-    font-size: 30px;
-  }
-
   .status-check input {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
   }
 
   .task-card {
-    height: auto;
-    min-height: 500px;
-  }
+    padding: 18px;
 
-  .task-card form {
-    gap: 14px;
+    min-height: 570px;
   }
 
   .personality-card {
-    max-width: 250px;
+    width: 225px;
+    height: 245px;
   }
 
   .leaderboard {
-    margin-bottom: 20px;
+    min-height: 500px;
   }
 
-  .tbody {
-    max-height: 300px;
+  .table {
+    height: 430px;
   }
 
   .status-result {
     position: relative;
+
     right: auto;
     top: auto;
-    margin: 10px auto 0;
+
+    margin: 10px auto;
   }
 }
 
 @media (max-width: 500px) {
   .character-carousel {
     height: 190px;
-    border-radius: 28px;
   }
 
   .character-window {
     width: 105px;
-    border-width: 5px;
-  }
-
-  .character-carousel > button {
-    font-size: 30px;
+    height: 105px;
   }
 
   .task-card {
-    padding: 15px;
-    border-radius: 25px;
+    min-height: 550px;
   }
 
+  .dark-row {
+    min-height: 52px;
+  }
+
+  .dark-row input,
   .dark-row a {
-    padding: 0 12px;
-  }
-
-  .leaderboard h2 {
-    font-size: 25px;
+    height: 37px;
   }
 }
