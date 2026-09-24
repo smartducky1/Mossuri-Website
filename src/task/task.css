@@ -19,30 +19,35 @@ body {
 }
 
 .task-page {
+  /*
+    Desktop design canvas.
+
+    The reference artwork is 1728px wide.
+    The actual visible composition ends around 980px high,
+    so we scale using 980px rather than the unused extra
+    vertical space from the original canvas.
+  */
   --desktop-scale: min(
     calc(100vw / 1728px),
-    calc(100vh / 1117px)
+    calc(100vh / 980px)
   );
 
-  /*
-    Desktop uses a fixed 1728 x 1117 design canvas and scales the
-    whole composition uniformly to fit the viewport.
-  */
   position: absolute;
+
   left: 50%;
-  top: 50%;
+  top: 0;
 
   width: 1728px;
-  height: 1117px;
+  height: 980px;
 
   margin: 0;
   padding: 0;
 
   transform:
-    translate(-50%, -50%)
+    translateX(-50%)
     scale(var(--desktop-scale));
 
-  transform-origin: center center;
+  transform-origin: top center;
 
   overflow: hidden;
 
@@ -420,8 +425,7 @@ body {
 }
 
 /* =========================================================
-   PERSONALITY DOWNLOAD BUTTON
-   ONLY CHANGED SECTION
+   DOWNLOAD BUTTON
    ========================================================= */
 
 .personality-card > button.character-download {
@@ -552,6 +556,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+
   gap: 8px;
 }
 
@@ -771,6 +776,7 @@ body {
   .character-window {
     width: 105px;
     height: 105px;
+
     border-width: 6px;
   }
 
