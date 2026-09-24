@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import TaskPage from './task/TaskPage'
 
 const X_URL = 'https://x.com/mossuris'
 const PINNED_POST_URL = X_URL
+
 const arts = Array.from(
   { length: 23 },
   (_, i) =>
@@ -19,6 +20,7 @@ function validateUsername(value) {
 function validateXStatusUrl(value) {
   try {
     const url = new URL(value.trim())
+
     const host = url.hostname
       .toLowerCase()
       .replace(/^www\./, '')
@@ -50,22 +52,23 @@ function validateWallet(value) {
   )
 }
 
-function App() {
-  const [xUser, setXUser] = useState('')
-  const [qt, setQt] = useState('')
-  const [tags, setTags] = useState('')
-  const [wallet, setWallet] = useState('')
-  const [errors, setErrors] = useState({})
-  const [status, setStatus] = useState('idle')
-  const [serverError, setServerError] = useState('')
+function HomePage() {
+  const [xUser, setXUser] = React.useState('')
+  const [qt, setQt] = React.useState('')
+  const [tags, setTags] = React.useState('')
+  const [wallet, setWallet] = React.useState('')
 
-  const rows = useMemo(() => {
-    const a = arts.slice(0, 12)
-    const b = arts.slice(12)
+  const [errors, setErrors] = React.useState({})
+  const [status, setStatus] = React.useState('idle')
+  const [serverError, setServerError] = React.useState('')
+
+  const rows = React.useMemo(() => {
+    const first = arts.slice(0, 12)
+    const second = arts.slice(12)
 
     return [
-      a.concat(a),
-      b.concat(b)
+      first.concat(first),
+      second.concat(second),
     ]
   }, [])
 
@@ -81,11 +84,13 @@ function App() {
     const next = {}
 
     if (!validateUsername(xUser)) {
-      next.xUser = 'Enter a valid X username.'
+      next.xUser =
+        'Enter a valid X username.'
     }
 
     if (!validateXStatusUrl(qt)) {
-      next.qt = 'Enter a valid X post URL.'
+      next.qt =
+        'Enter a valid X post URL.'
     }
 
     if (!validateXStatusUrl(tags)) {
@@ -100,11 +105,14 @@ function App() {
 
     setErrors(next)
 
-    return Object.keys(next).length === 0
+    return (
+      Object.keys(next).length === 0
+    )
   }
 
-  const submit = async (e) => {
-    e.preventDefault()
+  const submit = async event => {
+    event.preventDefault()
+
     setServerError('')
 
     if (!validate()) {
@@ -114,19 +122,27 @@ function App() {
     setStatus('sending')
 
     try {
+      /*
+       * IMPORTANT:
+       * The original homepage uses the ORIGINAL whitelist endpoint.
+       * The /task page uses TaskPage.jsx and /api/submit-task.
+       */
       const response = await fetch(
         '/api/submit-whitelist',
         {
           method: 'POST',
+
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type':
+              'application/json',
           },
+
           body: JSON.stringify({
             xUsername: xUser,
             quoteTweet: qt,
             tagFriends: tags,
-            wallet
-          })
+            wallet,
+          }),
         }
       )
 
@@ -220,14 +236,13 @@ function App() {
         </div>
 
         {status === 'success' ? (
-
           <div
             className="success-overlay"
             role="presentation"
-            onMouseDown={(e) => {
+            onMouseDown={event => {
               if (
-                e.target ===
-                e.currentTarget
+                event.target ===
+                event.currentTarget
               ) {
                 startAnother()
               }
@@ -281,9 +296,7 @@ function App() {
             </div>
 
           </div>
-
         ) : (
-
           <form
             className="card"
             onSubmit={submit}
@@ -293,7 +306,7 @@ function App() {
             <div className="task">
 
               <label>
-                FOLLOW X{' '}
+                FOLLOW X
                 <small>
                   (DROP X USERNAME)
                 </small>
@@ -308,8 +321,10 @@ function App() {
                       : ''
                   }
                   value={xUser}
-                  onChange={(e) =>
-                    setXUser(e.target.value)
+                  onChange={event =>
+                    setXUser(
+                      event.target.value
+                    )
                   }
                   placeholder="@username"
                   autoComplete="off"
@@ -364,8 +379,10 @@ function App() {
                     : ''
                 }
                 value={qt}
-                onChange={(e) =>
-                  setQt(e.target.value)
+                onChange={event =>
+                  setQt(
+                    event.target.value
+                  )
                 }
                 placeholder="Paste your X post link"
                 autoComplete="off"
@@ -392,8 +409,10 @@ function App() {
                     : ''
                 }
                 value={tags}
-                onChange={(e) =>
-                  setTags(e.target.value)
+                onChange={event =>
+                  setTags(
+                    event.target.value
+                  )
                 }
                 placeholder="Paste your X comment link"
                 autoComplete="off"
@@ -420,8 +439,10 @@ function App() {
                     : ''
                 }
                 value={wallet}
-                onChange={(e) =>
-                  setWallet(e.target.value)
+                onChange={event =>
+                  setWallet(
+                    event.target.value
+                  )
                 }
                 placeholder="0x..."
                 autoComplete="off"
@@ -455,7 +476,6 @@ function App() {
             </button>
 
           </form>
-
         )}
 
       </section>
@@ -469,33 +489,29 @@ function App() {
         <div className="marquee">
 
           <div className="track left">
-
             {rows[0].map(
-              (src, i) => (
+              (src, index) => (
                 <img
-                  key={'a' + i}
+                  key={`a${index}`}
                   src={src}
                   alt=""
                   draggable="false"
                 />
               )
             )}
-
           </div>
 
           <div className="track right">
-
             {rows[1].map(
-              (src, i) => (
+              (src, index) => (
                 <img
-                  key={'b' + i}
+                  key={`b${index}`}
                   src={src}
                   alt=""
                   draggable="false"
                 />
               )
             )}
-
           </div>
 
         </div>
@@ -509,10 +525,11 @@ function App() {
         </span>
 
         <button
+          type="button"
           onClick={() =>
             window.scrollTo({
               top: 0,
-              behavior: 'smooth'
+              behavior: 'smooth',
             })
           }
         >
@@ -525,15 +542,17 @@ function App() {
   )
 }
 
-
-/**
+/*
  * =========================================================
- * ROUTING
+ * ROUTER
  * =========================================================
+ *
+ * /task MUST render TaskPage.
+ *
+ * / MUST render the original homepage.
  */
 
 function AppRouter() {
-
   const path =
     window.location.pathname
       .replace(/\/+$/, '') || '/'
@@ -542,9 +561,8 @@ function AppRouter() {
     return <TaskPage />
   }
 
-  return <App />
+  return <HomePage />
 }
-
 
 createRoot(
   document.getElementById('root')
