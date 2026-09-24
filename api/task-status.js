@@ -8,15 +8,8 @@ const HMAC_SECRET =
 
 function sendJson(res, status, data) {
   res.status(status);
-  res.setHeader(
-    'Content-Type',
-    'application/json'
-  );
-  res.setHeader(
-    'Cache-Control',
-    'no-store'
-  );
-
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
   return res.json(data);
 }
 
@@ -39,8 +32,9 @@ export default async function handler(req, res) {
     });
   }
 
-  const wallet =
-    String(req.query.wallet || '').trim();
+  const wallet = String(
+    req.query.wallet || ''
+  ).trim();
 
   if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
     return sendJson(res, 400, {
@@ -59,10 +53,6 @@ export default async function handler(req, res) {
   try {
     const timestamp = Date.now();
 
-    /*
-     * MUST match taskStatusMessage_()
-     * in Code.gs exactly.
-     */
     const message = [
       'task-status',
       String(timestamp),
