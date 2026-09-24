@@ -229,6 +229,7 @@ export default function TaskPage() {
             )
           }
           aria-label="Previous"
+          type="button"
         >
           ◀
         </button>
@@ -247,6 +248,7 @@ export default function TaskPage() {
             )
           }
           aria-label="Next"
+          type="button"
         >
           ▶
         </button>
@@ -473,11 +475,7 @@ export default function TaskPage() {
           aria-label="Download character"
           type="button"
         >
-          <img
-            src="/assets/task/download.png"
-            alt=""
-            aria-hidden="true"
-          />
+          <span aria-hidden="true">⇩</span>
         </button>
 
       </section>
