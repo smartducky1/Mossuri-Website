@@ -11,33 +11,45 @@ function sendJson(res, status, data) {
 }
 
 async function postToGoogleAppsScript(url, body) {
-  let currentUrl = url;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body,
+    redirect: 'manual',
+  });
 
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await fetch(currentUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-      redirect: 'manual',
-    });
+  /*
+   * Google Apps Script redirects the response to
+   * a googleusercontent.com URL.
+   *
+   * The POST has already executed doPost(), so the
+   * redirected response must be fetched with GET.
+   */
+  if (
+    response.status >= 300 &&
+    response.status < 400
+  ) {
+    const location =
+      response.headers.get('location');
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location');
-
-      if (!location) {
-        throw new Error('Missing Google Apps Script redirect location.');
-      }
-
-      currentUrl = new URL(location, currentUrl).toString();
-      continue;
+    if (!location) {
+      throw new Error(
+        'Missing Google Apps Script redirect location.'
+      );
     }
 
-    return response;
+    const redirectedUrl =
+      new URL(location, url).toString();
+
+    return fetch(redirectedUrl, {
+      method: 'GET',
+      redirect: 'follow',
+    });
   }
 
-  throw new Error('Too many redirects from Google Apps Script.');
+  return response;
 }
 
 export default async function handler(req, res) {
@@ -48,7 +60,10 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!APPS_SCRIPT_URL || !HMAC_SECRET) {
+  if (
+    !APPS_SCRIPT_URL ||
+    !HMAC_SECRET
+  ) {
     return sendJson(res, 500, {
       ok: false,
       error: 'Backend is not configured.',
@@ -62,7 +77,8 @@ export default async function handler(req, res) {
       timestamp,
     };
 
-    const payload = JSON.stringify(payloadObject);
+    const payload =
+      JSON.stringify(payloadObject);
 
     const signature = createHmac(
       'sha256',
@@ -71,19 +87,37 @@ export default async function handler(req, res) {
       .update(payload, 'utf8')
       .digest('hex');
 
-    const requestBody = JSON.stringify({
-      type: 'task-approved',
-      ...payloadObject,
-      signature,
-    });
+    const requestBody =
+      JSON.stringify({
+        type: 'task-approved',
+        ...payloadObject,
+        signature,
+      });
 
-    const googleResponse = await postToGoogleAppsScript(
-      APPS_SCRIPT_URL,
-      requestBody
-    );
+    const googleResponse =
+      await postToGoogleAppsScript(
+        APPS_SCRIPT_URL,
+        requestBody
+      );
 
-    const text = await googleResponse.text();
-    const data = JSON.parse(text);
+    const text =
+      await googleResponse.text();
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error(
+        'Invalid Google Apps Script response:',
+        text
+      );
+
+      return sendJson(res, 502, {
+        ok: false,
+        approved: [],
+      });
+    }
 
     return sendJson(
       res,
@@ -91,7 +125,10 @@ export default async function handler(req, res) {
       data
     );
   } catch (error) {
-    console.error('Approved leaderboard error:', error);
+    console.error(
+      'Approved leaderboard error:',
+      error
+    );
 
     return sendJson(res, 500, {
       ok: false,
