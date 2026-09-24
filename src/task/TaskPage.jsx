@@ -184,18 +184,19 @@ export default function TaskPage() {
     }
 
     try {
-      const response = await fetch('/api/submit-task', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          xUsername: xUser,
-          quoteTweet: quote,
-          tagFriends: tags,
-          wallet,
-          character: character.name,
-        }),
+const response = await fetch('/api/submit-task', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    xUsername: xUser,
+    quoteTweet: quote,
+    tagFriends: tags,
+    wallet,
+    character: character.name,
+  }),
+})
       })
 
       const data = await response.json().catch(() => ({}))
