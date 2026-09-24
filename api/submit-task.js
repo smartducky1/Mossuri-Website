@@ -1,10 +1,16 @@
-import { createHmac } from 'node:crypto';
+import {
+  createHmac,
+  createHash,
+} from 'node:crypto';
 
-const APPS_SCRIPT_URL =
-  process.env.GOOGLE_APPS_SCRIPT_URL;
-
-const HMAC_SECRET =
-  process.env.MOSSURI_HMAC_SECRET;
+console.log(
+  'MOSSURI_HMAC_SECRET fingerprint:',
+  HMAC_SECRET
+    ? createHash('sha256')
+        .update(HMAC_SECRET.trim(), 'utf8')
+        .digest('hex')
+    : 'MISSING'
+);
 
 function sendJson(res, status, data) {
   res.status(status);
