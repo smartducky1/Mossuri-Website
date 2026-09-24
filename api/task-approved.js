@@ -8,15 +8,8 @@ const HMAC_SECRET =
 
 function sendJson(res, status, data) {
   res.status(status);
-  res.setHeader(
-    'Content-Type',
-    'application/json'
-  );
-  res.setHeader(
-    'Cache-Control',
-    'no-store'
-  );
-
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
   return res.json(data);
 }
 
@@ -49,10 +42,6 @@ export default async function handler(req, res) {
   try {
     const timestamp = Date.now();
 
-    /*
-     * MUST match taskApprovedMessage_()
-     * in Code.gs exactly.
-     */
     const message = [
       'task-approved',
       String(timestamp),
