@@ -11,35 +11,46 @@ function sendJson(res, status, data) {
 }
 
 async function postToGoogleAppsScript(url, body) {
-  let currentUrl = url;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body,
+    redirect: 'manual',
+  });
 
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const response = await fetch(currentUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-      redirect: 'manual',
-    });
+  /*
+   * Google Apps Script ContentService redirects the response
+   * to a googleusercontent.com URL.
+   *
+   * The original POST has already executed doPost().
+   * Therefore the redirect must be followed with GET,
+   * NOT another POST.
+   */
+  if (
+    response.status >= 300 &&
+    response.status < 400
+  ) {
+    const location =
+      response.headers.get('location');
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location');
-
-      if (!location) {
-        throw new Error(
-          `Google Apps Script returned HTTP ${response.status} without a redirect location.`
-        );
-      }
-
-      currentUrl = new URL(location, currentUrl).toString();
-      continue;
+    if (!location) {
+      throw new Error(
+        `Google Apps Script returned HTTP ${response.status} without a redirect location.`
+      );
     }
 
-    return response;
+    const redirectedUrl =
+      new URL(location, url).toString();
+
+    return fetch(redirectedUrl, {
+      method: 'GET',
+      redirect: 'follow',
+    });
   }
 
-  throw new Error('Too many redirects from Google Apps Script.');
+  return response;
 }
 
 export default async function handler(req, res) {
@@ -75,11 +86,20 @@ export default async function handler(req, res) {
         ? JSON.parse(req.body)
         : req.body || {};
 
-    const xUsername = String(body.xUsername || '').trim();
-    const quoteTweet = String(body.quoteTweet || '').trim();
-    const tagFriends = String(body.tagFriends || '').trim();
-    const wallet = String(body.wallet || '').trim();
-    const character = String(body.character || '').trim();
+    const xUsername =
+      String(body.xUsername || '').trim();
+
+    const quoteTweet =
+      String(body.quoteTweet || '').trim();
+
+    const tagFriends =
+      String(body.tagFriends || '').trim();
+
+    const wallet =
+      String(body.wallet || '').trim();
+
+    const character =
+      String(body.character || '').trim();
 
     if (!xUsername) {
       return sendJson(res, 400, {
@@ -109,7 +129,9 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!['Hyper', 'Smart', 'Goofy'].includes(character)) {
+    if (
+      !['Hyper', 'Smart', 'Goofy'].includes(character)
+    ) {
       return sendJson(res, 400, {
         ok: false,
         error: 'Invalid character.',
@@ -127,7 +149,8 @@ export default async function handler(req, res) {
       character,
     };
 
-    const payload = JSON.stringify(payloadObject);
+    const payload =
+      JSON.stringify(payloadObject);
 
     const signature = createHmac(
       'sha256',
@@ -142,38 +165,56 @@ export default async function handler(req, res) {
       signature,
     });
 
-    const googleResponse = await postToGoogleAppsScript(
-      APPS_SCRIPT_URL,
-      requestBody
-    );
+    const googleResponse =
+      await postToGoogleAppsScript(
+        APPS_SCRIPT_URL,
+        requestBody
+      );
 
-    const responseText = await googleResponse.text();
+    const responseText =
+      await googleResponse.text();
 
     let googleData;
 
     try {
-      googleData = JSON.parse(responseText);
+      googleData =
+        JSON.parse(responseText);
     } catch {
+      console.error(
+        'Invalid Google Apps Script response:',
+        responseText
+      );
+
       return sendJson(res, 502, {
         ok: false,
-        error: 'Google Apps Script returned an invalid response.',
+        error:
+          'Google Apps Script returned an invalid response.',
       });
     }
 
     if (!googleData.ok) {
-      return sendJson(res, 400, googleData);
+      return sendJson(
+        res,
+        400,
+        googleData
+      );
     }
 
     return sendJson(res, 200, {
       ok: true,
-      status: googleData.status || 'Pending',
+      status:
+        googleData.status || 'Pending',
     });
   } catch (error) {
-    console.error('Task submission error:', error);
+    console.error(
+      'Task submission error:',
+      error
+    );
 
     return sendJson(res, 500, {
       ok: false,
-      error: 'Unable to submit application. Please try again.',
+      error:
+        'Unable to submit application. Please try again.',
     });
   }
 }
