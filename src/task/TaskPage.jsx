@@ -115,16 +115,18 @@ export default function TaskPage() {
   const checkStatus = async e => {
     e.preventDefault()
 
-    if (!validWallet(checkWallet)) {
-      return setCheckResult(
-        'INVALID WALLET'
-      )
+    setCheckResult('')
+
+    const walletValue = checkWallet.trim()
+
+    if (!validWallet(walletValue)) {
+      return setCheckResult('INVALID WALLET')
     }
 
     try {
       const r = await fetch(
         `/api/task-status?wallet=${encodeURIComponent(
-          checkWallet.trim()
+          walletValue
         )}`,
         {
           cache: 'no-store',
@@ -133,9 +135,18 @@ export default function TaskPage() {
 
       const d = await r.json()
 
+      if (!r.ok) {
+        setCheckResult(
+          d.status
+            ? String(d.status).toUpperCase()
+            : 'ERROR'
+        )
+        return
+      }
+
       setCheckResult(
         d.status
-          ? d.status.toUpperCase()
+          ? String(d.status).toUpperCase()
           : 'NOT FOUND'
       )
     } catch {
@@ -262,25 +273,35 @@ export default function TaskPage() {
           onSubmit={checkStatus}
           className="status-check"
         >
-          <span>
-            Check status
-          </span>
+          <div className="status-check-box">
 
-          <input
-            value={checkWallet}
-            onChange={e =>
-              setCheckWallet(
-                e.target.value
-              )
-            }
-            placeholder="Paste EVM"
-            spellCheck="false"
-          />
+            <input
+              value={checkWallet}
+              onChange={e =>
+                setCheckWallet(
+                  e.target.value
+                )
+              }
+              placeholder="Paste EVM"
+              spellCheck="false"
+              autoComplete="off"
+            />
+
+            <button
+              type="submit"
+              className="status-check-button"
+            >
+              Check status
+            </button>
+
+          </div>
         </form>
 
         {checkResult && (
           <div
-            className={`status-result ${checkResult.toLowerCase()}`}
+            className={`status-result ${checkResult
+              .toLowerCase()
+              .replace(/\s+/g, '-')}`}
           >
             {checkResult}
           </div>
@@ -475,7 +496,9 @@ export default function TaskPage() {
           aria-label="Download character"
           type="button"
         >
-          <span aria-hidden="true">⇩</span>
+          <span aria-hidden="true">
+            ⇩
+          </span>
         </button>
 
       </section>
