@@ -35,13 +35,14 @@ body {
 }
 
 /* =========================================================
-   CHARACTER CAROUSEL
+   CHARACTER SELECTOR
+   Figma: approx x157 / y59 / 348x246
    ========================================================= */
 
 .character-carousel {
   position: absolute;
 
-  left: 9vw;
+  left: 9.1vw;
   top: 5.3vh;
 
   width: 20.1vw;
@@ -49,9 +50,6 @@ body {
 
   max-width: 348px;
   max-height: 246px;
-
-  min-width: 300px;
-  min-height: 210px;
 
   background: #fff;
 
@@ -63,8 +61,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-around;
-
-  z-index: 5;
 }
 
 .character-carousel > button {
@@ -114,18 +110,17 @@ body {
 
 /* =========================================================
    CHECK STATUS
+   Figma: label around x840 / input x1127
    ========================================================= */
 
 .status-area {
   position: absolute;
 
-  left: 48vw;
+  left: 48.6vw;
   top: 12.5vh;
 
   width: 47vw;
   height: 100px;
-
-  z-index: 5;
 }
 
 .status-check {
@@ -193,12 +188,13 @@ body {
 
 /* =========================================================
    TASK FORM
+   Figma: approx x70 / y333 / 511x623
    ========================================================= */
 
 .task-card {
   position: absolute;
 
-  left: 4vw;
+  left: 4.05vw;
   top: 29.8vh;
 
   width: 29.6vw;
@@ -207,7 +203,7 @@ body {
   max-width: 511px;
   max-height: 623px;
 
-  min-width: 430px;
+  min-width: 450px;
   min-height: 570px;
 
   padding: 17px 28px 24px;
@@ -220,8 +216,6 @@ body {
   box-shadow: 0 7px 0 #000;
 
   overflow: hidden;
-
-  z-index: 4;
 }
 
 .task-card form {
@@ -355,17 +349,13 @@ body {
 
 /* =========================================================
    PERSONALITY CARD
+   Figma: approx x589 / y447 / 227x245
    ========================================================= */
 
 .personality-card {
   position: absolute;
 
-  /*
-   * Kept very close to the task form.
-   * Task form ends around 33.6vw,
-   * personality starts around 34.2vw.
-   */
-  left: 34.2vw;
+  left: 34.1vw;
   top: 40%;
 
   width: 13.15vw;
@@ -374,8 +364,8 @@ body {
   max-width: 227px;
   max-height: 245px;
 
-  min-width: 190px;
-  min-height: 215px;
+  min-width: 200px;
+  min-height: 220px;
 
   padding: 7px;
 
@@ -387,8 +377,6 @@ body {
   box-shadow: 0 5px 0 #000;
 
   text-align: center;
-
-  z-index: 6;
 }
 
 .personality-card img {
@@ -447,12 +435,13 @@ body {
 
 /* =========================================================
    LEADERBOARD
+   Figma: approx x979 / y334 / 508x638
    ========================================================= */
 
 .leaderboard {
   position: absolute;
 
-  left: 56.5vw;
+  left: 56.65vw;
   top: 29.9vh;
 
   width: 29.4vw;
@@ -461,10 +450,8 @@ body {
   max-width: 508px;
   max-height: 638px;
 
-  min-width: 430px;
+  min-width: 450px;
   min-height: 570px;
-
-  z-index: 4;
 }
 
 .leaderboard h2 {
@@ -626,77 +613,33 @@ body {
 }
 
 /* =========================================================
-   1366–1500px
-   TIGHTER DESKTOP FIT
+   SMALL DESKTOP
    ========================================================= */
 
-@media (min-width: 1366px) and (max-width: 1500px) {
-
-  .character-carousel {
-    left: 7vw;
-    width: 24vw;
+@media (max-width: 1200px) and (min-width: 901px) {
+  .task-card {
+    min-width: 0;
   }
 
-  .status-area {
-    left: 46vw;
-    width: 50vw;
+  .leaderboard {
+    min-width: 0;
+  }
+
+  .personality-card {
+    min-width: 170px;
+  }
+
+  .character-window {
+    min-width: 85px;
+    min-height: 85px;
   }
 
   .status-check {
-    gap: 14px;
+    gap: 12px;
   }
 
   .status-check input {
-    width: 24vw;
-    min-width: 240px;
-  }
-
-  .task-card {
-    left: 3.5vw;
-    width: 34vw;
-    min-width: 0;
-  }
-
-  /*
-   * Personality sits directly beside task form.
-   */
-  .personality-card {
-    left: 38vw;
-    width: 15vw;
-    min-width: 180px;
-  }
-
-  .leaderboard {
-    left: 58vw;
-    width: 38vw;
-    min-width: 0;
-  }
-}
-
-/* =========================================================
-   1501–1920px
-   STANDARD DESKTOP
-   ========================================================= */
-
-@media (min-width: 1501px) and (max-width: 1920px) {
-
-  .character-carousel {
-    left: 9vw;
-  }
-
-  .task-card {
-    left: 4vw;
-  }
-
-  .personality-card {
-    /*
-     * CLOSE TO TASK FORM
-     */
-    left: 34.2vw;
-  }
-
-  .leaderboard {
-    left: 56.5vw;
+    min-width: 220px;
   }
 }
 
@@ -705,11 +648,9 @@ body {
    ========================================================= */
 
 @media (max-width: 900px) {
-
   .task-page {
     position: relative;
 
-    width: 100%;
     height: auto;
     min-height: 100vh;
 
@@ -727,12 +668,10 @@ body {
   .task-card,
   .personality-card,
   .leaderboard {
-
     position: relative;
 
     left: auto;
     top: auto;
-    right: auto;
 
     width: 100%;
     height: auto;
@@ -751,18 +690,11 @@ body {
 
   .status-area {
     padding: 0;
-
-    display: flex;
-    justify-content: center;
   }
 
   .status-check {
     flex-direction: column;
     gap: 10px;
-  }
-
-  .status-check span {
-    font-size: 30px;
   }
 
   .status-check input {
@@ -771,9 +703,9 @@ body {
   }
 
   .task-card {
-    min-height: 570px;
-
     padding: 18px;
+
+    min-height: 570px;
   }
 
   .personality-card {
@@ -799,25 +731,14 @@ body {
   }
 }
 
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
 @media (max-width: 500px) {
-
   .character-carousel {
     height: 190px;
-
-    border-radius: 28px;
   }
 
   .character-window {
     width: 105px;
     height: 105px;
-  }
-
-  .character-carousel > button {
-    font-size: 30px;
   }
 
   .task-card {
@@ -831,9 +752,5 @@ body {
   .dark-row input,
   .dark-row a {
     height: 37px;
-  }
-
-  .leaderboard h2 {
-    font-size: 25px;
   }
 }
