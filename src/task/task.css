@@ -13,18 +13,27 @@ body,
 }
 
 body {
-  overflow-x: hidden;
+  overflow: hidden;
+  background: #bce900;
 }
 
 .task-page {
   position: relative;
-  width: 100%;
-  height: 100vh;
-  min-height: 700px;
+
+  /* EXACT FIGMA DESIGN RATIO */
+  width: min(100vw, calc(100vh * 1.5479));
+  height: min(100vh, calc(100vw / 1.5479));
+
+  min-width: 0;
+  min-height: 0;
+
+  margin: 0 auto;
+
   overflow: hidden;
 
   background: #bce900;
   color: #000;
+
   font-family: 'Skranji', cursive;
 }
 
@@ -35,21 +44,18 @@ body {
 }
 
 /* =========================================================
-   CHARACTER SELECTOR
-   Figma: approx x157 / y59 / 348x246
+   CHARACTER CAROUSEL
+   REFERENCE: x157 y59 width348 height246
    ========================================================= */
 
 .character-carousel {
   position: absolute;
 
-  left: 9.1vw;
-  top: 5.3vh;
+  left: 9.086%;
+  top: 5.282%;
 
-  width: 20.1vw;
-  height: 22vh;
-
-  max-width: 348px;
-  max-height: 246px;
+  width: 20.139%;
+  height: 22.023%;
 
   background: #fff;
 
@@ -64,8 +70,8 @@ body {
 }
 
 .character-carousel > button {
-  width: 50px;
-  height: 65px;
+  width: 15%;
+  height: 30%;
 
   padding: 0;
 
@@ -75,21 +81,15 @@ body {
   color: #000;
 
   font-family: Arial, sans-serif;
-  font-size: 42px;
+  font-size: clamp(25px, 2.4vw, 42px);
   font-weight: 900;
 
   cursor: pointer;
 }
 
 .character-window {
-  width: 8.5vw;
-  height: 11.8vh;
-
-  max-width: 147px;
-  max-height: 132px;
-
-  min-width: 105px;
-  min-height: 105px;
+  width: 42%;
+  height: 54%;
 
   border: 7px solid #000;
   border-radius: 23px;
@@ -110,44 +110,39 @@ body {
 
 /* =========================================================
    CHECK STATUS
-   Figma: label around x840 / input x1127
+   REFERENCE: x839 y139
    ========================================================= */
 
 .status-area {
   position: absolute;
 
-  left: 48.6vw;
-  top: 12.5vh;
+  left: 48.553%;
+  top: 12.444%;
 
-  width: 47vw;
-  height: 100px;
+  width: 36.401%;
+  height: 8.863%;
 }
 
 .status-check {
   width: 100%;
+  height: 100%;
 
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
 
-  gap: 25px;
+  gap: 20px;
 }
 
 .status-check span {
-  font-size: clamp(28px, 2.55vw, 44px);
+  font-size: clamp(25px, 2.55vw, 44px);
 
   white-space: nowrap;
 }
 
 .status-check input {
-  width: 19.7vw;
-  height: 8.8vh;
-
-  max-width: 341px;
-  max-height: 98px;
-
-  min-width: 260px;
-  min-height: 70px;
+  width: 54.05%;
+  height: 100%;
 
   border: 6px solid #000;
   border-radius: 25px;
@@ -159,7 +154,7 @@ body {
 
   outline: none;
 
-  font-size: clamp(20px, 1.65vw, 29px);
+  font-size: clamp(18px, 1.65vw, 29px);
 }
 
 .status-check input::placeholder {
@@ -170,7 +165,7 @@ body {
   position: absolute;
 
   right: 0;
-  top: 110px;
+  top: 110%;
 
   padding: 10px 20px;
 
@@ -188,23 +183,17 @@ body {
 
 /* =========================================================
    TASK FORM
-   Figma: approx x70 / y333 / 511x623
+   REFERENCE: x70 y332 width511 height624
    ========================================================= */
 
 .task-card {
   position: absolute;
 
-  left: 4.05vw;
-  top: 29.8vh;
+  left: 4.051%;
+  top: 29.722%;
 
-  width: 29.6vw;
-  height: 55.8vh;
-
-  max-width: 511px;
-  max-height: 623px;
-
-  min-width: 450px;
-  min-height: 570px;
+  width: 29.572%;
+  height: 55.864%;
 
   padding: 17px 28px 24px;
 
@@ -237,7 +226,7 @@ body {
 
   margin: 0 0 6px 13px;
 
-  font-size: clamp(13px, 0.95vw, 17px);
+  font-size: clamp(11px, 0.95vw, 17px);
 }
 
 .dark-row {
@@ -272,7 +261,7 @@ body {
 
   outline: none;
 
-  font-size: 12px;
+  font-size: clamp(10px, 0.7vw, 13px);
 }
 
 .dark-row input::placeholder {
@@ -295,7 +284,7 @@ body {
 
   text-decoration: none;
 
-  font-size: 14px;
+  font-size: clamp(11px, 0.8vw, 14px);
 
   white-space: nowrap;
 }
@@ -349,23 +338,18 @@ body {
 
 /* =========================================================
    PERSONALITY CARD
-   Figma: approx x589 / y447 / 227x245
+   REFERENCE: x589 y447 width227 height245
+   DIRECTLY BESIDE TASK FORM
    ========================================================= */
 
 .personality-card {
   position: absolute;
 
-  left: 34.1vw;
-  top: 40%;
+  left: 34.086%;
+  top: 40.018%;
 
-  width: 13.15vw;
-  height: 21.9vh;
-
-  max-width: 227px;
-  max-height: 245px;
-
-  min-width: 200px;
-  min-height: 220px;
+  width: 13.137%;
+  height: 21.934%;
 
   padding: 7px;
 
@@ -377,6 +361,8 @@ body {
   box-shadow: 0 5px 0 #000;
 
   text-align: center;
+
+  z-index: 6;
 }
 
 .personality-card img {
@@ -435,36 +421,36 @@ body {
 
 /* =========================================================
    LEADERBOARD
-   Figma: approx x979 / y334 / 508x638
+   REFERENCE: x979 y334 width508 height639
    ========================================================= */
 
 .leaderboard {
   position: absolute;
 
-  left: 56.65vw;
-  top: 29.9vh;
+  left: 56.655%;
+  top: 29.902%;
 
-  width: 29.4vw;
-  height: 57.1vh;
+  width: 29.398%;
+  height: 57.206%;
 
-  max-width: 508px;
-  max-height: 638px;
-
-  min-width: 450px;
-  min-height: 570px;
+  z-index: 4;
 }
 
 .leaderboard h2 {
-  margin: 0 0 9px;
+  height: 7%;
+
+  margin: 0 0 8px;
 
   text-align: center;
 
-  font-size: clamp(26px, 2.15vw, 38px);
+  font-size: clamp(24px, 2.15vw, 38px);
+
+  white-space: nowrap;
 }
 
 .table {
   width: 100%;
-  height: calc(100% - 60px);
+  height: 88%;
 
   background: #fff;
 
@@ -494,7 +480,7 @@ body {
 
   text-align: center;
 
-  font-size: clamp(13px, 1vw, 18px);
+  font-size: clamp(12px, 1vw, 18px);
 
   white-space: nowrap;
 
@@ -519,7 +505,9 @@ body {
 }
 
 .scroll-buttons {
-  margin-top: 11px;
+  height: 5%;
+
+  margin-top: 9px;
 
   text-align: center;
 }
@@ -613,46 +601,18 @@ body {
 }
 
 /* =========================================================
-   SMALL DESKTOP
-   ========================================================= */
-
-@media (max-width: 1200px) and (min-width: 901px) {
-  .task-card {
-    min-width: 0;
-  }
-
-  .leaderboard {
-    min-width: 0;
-  }
-
-  .personality-card {
-    min-width: 170px;
-  }
-
-  .character-window {
-    min-width: 85px;
-    min-height: 85px;
-  }
-
-  .status-check {
-    gap: 12px;
-  }
-
-  .status-check input {
-    min-width: 220px;
-  }
-}
-
-/* =========================================================
    MOBILE
+   Desktop composition stops here.
    ========================================================= */
 
 @media (max-width: 900px) {
-  .task-page {
-    position: relative;
 
+  .task-page {
+    width: 100%;
     height: auto;
     min-height: 100vh;
+
+    margin: 0;
 
     overflow-y: auto;
 
@@ -668,10 +628,12 @@ body {
   .task-card,
   .personality-card,
   .leaderboard {
+
     position: relative;
 
     left: auto;
     top: auto;
+    right: auto;
 
     width: 100%;
     height: auto;
@@ -697,15 +659,19 @@ body {
     gap: 10px;
   }
 
+  .status-check span {
+    font-size: 30px;
+  }
+
   .status-check input {
     width: 100%;
     max-width: 400px;
   }
 
   .task-card {
-    padding: 18px;
-
     min-height: 570px;
+
+    padding: 18px;
   }
 
   .personality-card {
@@ -731,7 +697,12 @@ body {
   }
 }
 
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
 @media (max-width: 500px) {
+
   .character-carousel {
     height: 190px;
   }
@@ -739,6 +710,10 @@ body {
   .character-window {
     width: 105px;
     height: 105px;
+  }
+
+  .character-carousel > button {
+    font-size: 30px;
   }
 
   .task-card {
@@ -752,5 +727,9 @@ body {
   .dark-row input,
   .dark-row a {
     height: 37px;
+  }
+
+  .leaderboard h2 {
+    font-size: 25px;
   }
 }
