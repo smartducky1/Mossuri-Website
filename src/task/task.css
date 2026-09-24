@@ -26,8 +26,7 @@ body {
 
   /*
     Desktop uses a fixed 1728 x 1117 design canvas and scales the
-    whole composition uniformly to fit the viewport. This preserves
-    the exact spacing/proportions from the supplied Figma reference.
+    whole composition uniformly to fit the viewport.
   */
   position: absolute;
   left: 50%;
@@ -39,7 +38,10 @@ body {
   margin: 0;
   padding: 0;
 
-  transform: translate(-50%, -50%) scale(var(--desktop-scale));
+  transform:
+    translate(-50%, -50%)
+    scale(var(--desktop-scale));
+
   transform-origin: center center;
 
   overflow: hidden;
@@ -58,7 +60,6 @@ body {
 
 /* =========================================================
    CHARACTER CAROUSEL
-   Figma reference: approx x157 y59 w348 h246
    ========================================================= */
 
 .character-carousel {
@@ -126,7 +127,6 @@ body {
 
 /* =========================================================
    CHECK STATUS
-   Figma reference: approx x840 y139
    ========================================================= */
 
 .status-area {
@@ -203,7 +203,6 @@ body {
 
 /* =========================================================
    TASK FORM
-   Figma reference: approx x70 y333 w511 h623
    ========================================================= */
 
 .task-card {
@@ -363,8 +362,6 @@ body {
 
 /* =========================================================
    PERSONALITY CARD
-   Figma reference: approx x589 y447 w227 h245
-   Sits immediately beside the task card.
    ========================================================= */
 
 .personality-card {
@@ -422,7 +419,12 @@ body {
   font-size: 18px;
 }
 
-.personality-card > button {
+/* =========================================================
+   PERSONALITY DOWNLOAD BUTTON
+   ONLY CHANGED SECTION
+   ========================================================= */
+
+.personality-card > button.character-download {
   position: absolute;
 
   left: 50%;
@@ -433,21 +435,31 @@ body {
   width: 53px;
   height: 34px;
 
+  padding: 0;
+
   border: 2px solid #000;
   border-radius: 8px;
 
   background: #fff;
 
-  font-family: Arial, sans-serif;
-  font-size: 20px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   cursor: pointer;
 }
 
+.personality-card > button.character-download img {
+  width: 25px;
+  height: 25px;
+
+  display: block;
+
+  object-fit: contain;
+}
+
 /* =========================================================
    LEADERBOARD
-   Figma reference: approx x979 y334 w508 h639
    ========================================================= */
 
 .leaderboard {
@@ -632,7 +644,6 @@ body {
 
 /* =========================================================
    MOBILE
-   Desktop canvas is replaced by a normal responsive stack.
    ========================================================= */
 
 @media (max-width: 900px) {
