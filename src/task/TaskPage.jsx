@@ -63,6 +63,7 @@ export default function TaskPage() {
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const [checkWallet, setCheckWallet] = useState('')
   const [checkResult, setCheckResult] = useState('')
@@ -73,7 +74,7 @@ export default function TaskPage() {
   const character = characters[index]
 
   useEffect(() => {
-    const load = async () => {
+    const loadApproved = async () => {
       try {
         const response = await fetch('/api/task-approved', {
           cache: 'no-store',
@@ -88,13 +89,16 @@ export default function TaskPage() {
           setApproved(data.approved.slice(0, 10))
         }
       } catch {
-        // Keep the page usable if the leaderboard request fails.
+        // Keep the page usable if leaderboard loading fails.
       }
     }
 
-    load()
+    loadApproved()
 
-    const intervalId = setInterval(load, 15000)
+    const intervalId = setInterval(
+      loadApproved,
+      15000
+    )
 
     return () => clearInterval(intervalId)
   }, [])
@@ -128,6 +132,7 @@ export default function TaskPage() {
       const response = await fetch(
         `/api/task-status?wallet=${encodeURIComponent(walletValue)}`,
         {
+          method: 'GET',
           cache: 'no-store',
         }
       )
@@ -183,28 +188,41 @@ export default function TaskPage() {
       return
     }
 
-    try {
-const response = await fetch('/api/submit-task', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    xUsername: xUser,
-    quoteTweet: quote,
-    tagFriends: tags,
-    wallet,
-    character: character.name,
-  }),
-})
-      })
+    setSubmitting(true)
 
-      const data = await response.json().catch(() => ({}))
+    try {
+      /*
+       * IMPORTANT:
+       * Task submissions go ONLY to /api/submit-task.
+       * This is NOT the original whitelist endpoint.
+       */
+      const response = await fetch(
+        '/api/submit-task',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json',
+          },
+
+          body: JSON.stringify({
+            xUsername: xUser,
+            quoteTweet: quote,
+            tagFriends: tags,
+            wallet,
+            character: character.name,
+          }),
+        }
+      )
+
+      const data = await response
+        .json()
+        .catch(() => ({}))
 
       if (!response.ok || !data.ok) {
         setServerError(
           data.error ||
-            'We could not save your application.'
+            'We could not save your application. Please try again.'
         )
         return
       }
@@ -216,18 +234,30 @@ const response = await fetch('/api/submit-task', {
       setErrors({})
       setServerError('')
       setSubmitted(true)
-    } catch {
+
+    } catch (error) {
+      console.error(
+        'Task submission request failed:',
+        error
+      )
+
       setServerError(
         'Connection error. Please try again.'
       )
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
     <main className="task-page">
 
-      {/* CHARACTER CAROUSEL */}
+      {/* =====================================================
+          CHARACTER CAROUSEL
+          ===================================================== */}
+
       <section className="character-carousel">
+
         <button
           type="button"
           onClick={() =>
@@ -252,27 +282,37 @@ const response = await fetch('/api/submit-task', {
           type="button"
           onClick={() =>
             setIndex(
-              (index + 1) % characters.length
+              (index + 1) %
+                characters.length
             )
           }
           aria-label="Next character"
         >
           ▶
         </button>
+
       </section>
 
-      {/* CHECK STATUS */}
+      {/* =====================================================
+          CHECK STATUS
+          ===================================================== */}
+
       <section className="status-area">
+
         <form
           className="status-check"
           onSubmit={checkStatus}
           noValidate
         >
+
           <div className="status-check-box">
+
             <input
               value={checkWallet}
               onChange={event =>
-                setCheckWallet(event.target.value)
+                setCheckWallet(
+                  event.target.value
+                )
               }
               placeholder="Paste EVM"
               spellCheck="false"
@@ -289,7 +329,9 @@ const response = await fetch('/api/submit-task', {
                 ? 'Checking...'
                 : 'Check status'}
             </button>
+
           </div>
+
         </form>
 
         {checkResult && (
@@ -301,20 +343,35 @@ const response = await fetch('/api/submit-task', {
             {checkResult}
           </div>
         )}
+
       </section>
 
-      {/* TASK FORM */}
-      <section className="task-card">
-        <form onSubmit={submit} noValidate>
+      {/* =====================================================
+          TASK FORM
+          ===================================================== */}
 
+      <section className="task-card">
+
+        <form
+          onSubmit={submit}
+          noValidate
+        >
+
+          {/* FOLLOW X */}
           <div className="task-row">
-            <label>Follow X</label>
+
+            <label>
+              Follow X
+            </label>
 
             <div className="dark-row">
+
               <input
                 value={xUser}
                 onChange={event =>
-                  setXUser(event.target.value)
+                  setXUser(
+                    event.target.value
+                  )
                 }
                 placeholder="Drop your X username"
                 autoComplete="off"
@@ -327,17 +384,26 @@ const response = await fetch('/api/submit-task', {
               >
                 Follow
               </a>
+
             </div>
 
             {errors.xUser && (
-              <small>{errors.xUser}</small>
+              <small>
+                {errors.xUser}
+              </small>
             )}
+
           </div>
 
+          {/* LIKE + RT */}
           <div className="task-row">
-            <label>Like and RT pinned post</label>
+
+            <label>
+              Like and RT pinned post
+            </label>
 
             <div className="dark-row single">
+
               <a
                 href="https://x.com/mossuris"
                 target="_blank"
@@ -345,69 +411,100 @@ const response = await fetch('/api/submit-task', {
               >
                 GO
               </a>
+
             </div>
+
           </div>
 
+          {/* QUOTE TWEET */}
           <div className="task-row">
+
             <label>
               QT pinned post with your selected character
             </label>
 
             <div className="dark-row">
+
               <input
                 value={quote}
                 onChange={event =>
-                  setQuote(event.target.value)
+                  setQuote(
+                    event.target.value
+                  )
                 }
                 placeholder="Link to QT https://x.com/status....."
                 autoComplete="off"
               />
+
             </div>
 
             {errors.quote && (
-              <small>{errors.quote}</small>
+              <small>
+                {errors.quote}
+              </small>
             )}
+
           </div>
 
+          {/* TAG FRIENDS */}
           <div className="task-row">
+
             <label>
               Tag 3 friends in pinned post comment
             </label>
 
             <div className="dark-row">
+
               <input
                 value={tags}
                 onChange={event =>
-                  setTags(event.target.value)
+                  setTags(
+                    event.target.value
+                  )
                 }
                 placeholder="Link to comment https://x.com/status....."
                 autoComplete="off"
               />
+
             </div>
 
             {errors.tags && (
-              <small>{errors.tags}</small>
+              <small>
+                {errors.tags}
+              </small>
             )}
+
           </div>
 
+          {/* WALLET */}
           <div className="task-row">
-            <label>Submit EVM wallet</label>
+
+            <label>
+              Submit EVM wallet
+            </label>
 
             <div className="dark-row">
+
               <input
                 value={wallet}
                 onChange={event =>
-                  setWallet(event.target.value)
+                  setWallet(
+                    event.target.value
+                  )
                 }
                 placeholder="0x........"
                 spellCheck="false"
                 autoComplete="off"
               />
+
             </div>
 
             {errors.wallet && (
-              <small>{errors.wallet}</small>
+              <small>
+                {errors.wallet}
+              </small>
             )}
+
           </div>
 
           {serverError && (
@@ -419,22 +516,36 @@ const response = await fetch('/api/submit-task', {
           <button
             className="register"
             type="submit"
+            disabled={submitting}
           >
-            REGISTER
+            {submitting
+              ? 'SUBMITTING...'
+              : 'REGISTER'}
           </button>
+
         </form>
+
       </section>
 
-      {/* PERSONALITY CARD */}
+      {/* =====================================================
+          PERSONALITY CARD
+          ===================================================== */}
+
       <section className="personality-card">
+
         <img
           src={character.image}
           alt={character.name}
         />
 
         <div>
-          <span>Personality</span>
-          <strong>{character.personality}</strong>
+          <span>
+            Personality
+          </span>
+
+          <strong>
+            {character.personality}
+          </strong>
         </div>
 
         <button
@@ -443,36 +554,72 @@ const response = await fetch('/api/submit-task', {
           aria-label="Download character"
           type="button"
         >
-          <span aria-hidden="true">⇩</span>
+          <span aria-hidden="true">
+            ⇩
+          </span>
         </button>
+
       </section>
 
-      {/* LEADERBOARD */}
+      {/* =====================================================
+          LEADERBOARD
+          ===================================================== */}
+
       <section className="leaderboard">
-        <h2>Approved Mossuris</h2>
+
+        <h2>
+          Approved Mossuris
+        </h2>
 
         <div className="table">
+
           <div className="thead">
-            <span>Username</span>
-            <span>Wallet</span>
-            <span>Status</span>
+
+            <span>
+              Username
+            </span>
+
+            <span>
+              Wallet
+            </span>
+
+            <span>
+              Status
+            </span>
+
           </div>
 
           <div className="tbody">
-            {approved.map((applicant, rowIndex) => (
-              <div
-                className="tr"
-                key={`${applicant.wallet}-${rowIndex}`}
-              >
-                <span>{applicant.username}</span>
-                <span>{applicant.wallet}</span>
-                <span>{applicant.status}</span>
-              </div>
-            ))}
+
+            {approved.map(
+              (applicant, rowIndex) => (
+                <div
+                  className="tr"
+                  key={`${applicant.wallet}-${rowIndex}`}
+                >
+
+                  <span>
+                    {applicant.username}
+                  </span>
+
+                  <span>
+                    {applicant.wallet}
+                  </span>
+
+                  <span>
+                    {applicant.status}
+                  </span>
+
+                </div>
+              )
+            )}
+
           </div>
+
         </div>
 
         <div className="scroll-buttons">
+
           <button
             type="button"
             onClick={() =>
@@ -502,17 +649,25 @@ const response = await fetch('/api/submit-task', {
           >
             ▼
           </button>
+
         </div>
+
       </section>
 
-      {/* SUCCESS POPUP */}
+      {/* =====================================================
+          SUCCESS POPUP
+          ===================================================== */}
+
       {submitted && (
         <div className="success-overlay">
+
           <div className="success-modal">
 
             <button
               className="close"
-              onClick={() => setSubmitted(false)}
+              onClick={() =>
+                setSubmitted(false)
+              }
               type="button"
               aria-label="Close"
             >
@@ -528,19 +683,25 @@ const response = await fetch('/api/submit-task', {
               Your Application have been received!
             </h2>
 
-            <p>Approval Pending.</p>
+            <p>
+              Approval Pending.
+            </p>
 
             <button
               className="register"
-              onClick={() => setSubmitted(false)}
+              onClick={() =>
+                setSubmitted(false)
+              }
               type="button"
             >
               Awesome!
             </button>
 
           </div>
+
         </div>
       )}
+
     </main>
   )
 }
