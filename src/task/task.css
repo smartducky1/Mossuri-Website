@@ -1,2 +1,692 @@
 @import url('https://fonts.googleapis.com/css2?family=Skranji:wght@400;700&display=swap');
-*{box-sizing:border-box}.task-page{min-height:100vh;padding:5vh 5vw;background:#bce900;color:#000;font-family:'Skranji',cursive;position:relative;overflow:hidden}.task-page button,.task-page input,.task-page a{font-family:inherit}.character-carousel{position:absolute;left:10%;top:6%;width:345px;height:245px;background:#fff;border:7px solid #000;border-radius:42px;box-shadow:0 7px #000;display:flex;align-items:center;justify-content:space-around}.character-carousel>button{border:0;background:none;font-size:35px;cursor:pointer}.character-window{width:145px;height:145px;border:8px solid #000;border-radius:22px;overflow:hidden;background:#dfffd7}.character-window img{width:100%;height:100%;object-fit:cover}.status-area{position:absolute;right:7%;top:8%;display:flex;align-items:center;gap:20px}.status-check{display:flex;align-items:center;gap:25px}.status-check span{font-size:40px}.status-check input{width:335px;height:96px;border:7px solid #000;border-radius:25px;padding:0 25px;font-size:28px;background:#fff;outline:0}.status-result{position:absolute;right:0;top:110px;background:#fff;border:5px solid #000;border-radius:15px;padding:15px 28px;font-size:25px;box-shadow:5px 5px #000}.task-card{position:absolute;left:5%;top:330px;width:510px;background:#fff;border:6px solid #000;border-radius:40px;box-shadow:0 7px #000;padding:18px 30px 28px}.task-row{margin:11px 0}.task-row label{display:block;margin:0 0 7px 18px;font-size:16px}.dark-row{background:#000;border-radius:17px;padding:10px;display:flex;gap:10px;min-height:62px}.dark-row input{flex:1;min-width:0;border:0;border-radius:12px;padding:0 14px;font-size:13px;outline:0}.dark-row a{background:#fff;color:#000;border-radius:12px;text-decoration:none;padding:11px 18px}.single{justify-content:flex-end}.task-row small{color:#a00000;margin-left:10px}.register{border:0;background:#000;color:#fff;border-radius:15px;padding:15px 55px;font-size:18px;cursor:pointer;display:block;margin:16px auto 0}.personality-card{position:absolute;left:39%;top:440px;width:225px;background:#ddd;border:3px solid #000;border-radius:30px;box-shadow:0 4px #000;padding:8px;text-align:center}.personality-card img{width:100%;aspect-ratio:1;object-fit:cover;border:5px solid #000;border-radius:24px}.personality-card div{display:flex;justify-content:space-around;font-size:14px;margin:5px}.personality-card>button{border:2px solid #000;background:#fff;border-radius:8px;width:52px;height:34px;font-size:20px;cursor:pointer}.leaderboard{position:absolute;right:5%;top:330px;width:510px}.leaderboard h2{text-align:center;font-size:30px;margin:0 0 8px}.table{background:#fff;border:5px solid #000;border-radius:35px;overflow:hidden;box-shadow:0 7px #000}.thead,.tr{display:grid;grid-template-columns:1fr 1.25fr 1fr}.thead span,.tr span{padding:17px 8px;border-right:4px solid #000;border-bottom:4px solid #000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.thead span:last-child,.tr span:last-child{border-right:0}.tbody{max-height:390px;overflow-y:auto}.scroll-buttons{text-align:center;margin-top:12px}.scroll-buttons button{border:3px solid #000;background:#fff;border-radius:10px;width:45px;height:38px;margin:0 4px}.server-error{text-align:center;color:#a00000}.success-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;z-index:100;padding:20px}.success-modal{position:relative;width:min(520px,94vw);background:#fff;border:6px solid #000;border-radius:30px;box-shadow:0 8px #000;text-align:center;padding:25px}.success-modal img{width:230px;height:230px;object-fit:cover;border-radius:22px}.success-modal h2{font-size:28px;margin:15px 0 8px}.success-modal p{font-size:23px;margin:0}.close{position:absolute;right:12px;top:6px;border:0;background:none;font-size:34px;cursor:pointer}@media(max-width:1000px){.task-page{min-height:100vh;overflow:auto;padding:25px 15px;display:flex;flex-direction:column;gap:20px}.character-carousel,.status-area,.task-card,.personality-card,.leaderboard{position:relative;left:auto;right:auto;top:auto;width:100%}.character-carousel{max-width:345px;margin:auto}.status-area{justify-content:center;flex-wrap:wrap}.status-check{flex-direction:column;gap:10px;width:100%}.status-check span{font-size:30px}.status-check input{width:100%;max-width:360px;height:70px}.personality-card{max-width:225px;margin:auto}.leaderboard{max-width:600px;margin:auto}}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.task-page {
+  width: 100%;
+  height: 100svh;
+  min-height: 720px;
+  padding: 3vh 4vw;
+  background: #bce900;
+  color: #000;
+  font-family: 'Skranji', cursive;
+  position: relative;
+  overflow: hidden;
+
+  display: grid;
+  grid-template-columns: 36% 22% 36%;
+  grid-template-rows: 40% 55%;
+  column-gap: 3%;
+  row-gap: 5%;
+}
+
+/* =========================================================
+   CHARACTER SELECTOR
+   ========================================================= */
+
+.character-carousel {
+  grid-column: 1;
+  grid-row: 1;
+
+  width: min(100%, 430px);
+  height: min(100%, 280px);
+
+  background: #fff;
+  border: 6px solid #000;
+  border-radius: 38px;
+  box-shadow: 0 7px 0 #000;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+
+  align-self: start;
+  justify-self: center;
+}
+
+.character-carousel > button {
+  width: 55px;
+  height: 70px;
+
+  border: 0;
+  background: transparent;
+
+  font-family: Arial, sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+
+  cursor: pointer;
+  color: #000;
+}
+
+.character-window {
+  width: clamp(125px, 11vw, 175px);
+  aspect-ratio: 1;
+
+  border: 7px solid #000;
+  border-radius: 24px;
+
+  overflow: hidden;
+  background: #dfffd7;
+  flex-shrink: 0;
+}
+
+.character-window img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* =========================================================
+   CHECK STATUS
+   ========================================================= */
+
+.status-area {
+  grid-column: 2 / 4;
+  grid-row: 1;
+
+  width: 100%;
+  align-self: start;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  padding-top: 20px;
+}
+
+.status-check {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24px;
+}
+
+.status-check span {
+  font-size: clamp(27px, 2.6vw, 45px);
+  white-space: nowrap;
+}
+
+.status-check input {
+  width: clamp(270px, 25vw, 420px);
+  height: clamp(70px, 8vw, 105px);
+
+  border: 6px solid #000;
+  border-radius: 25px;
+
+  padding: 0 22px;
+
+  font-family: inherit;
+  font-size: clamp(20px, 1.7vw, 29px);
+
+  background: #fff;
+  color: #000;
+
+  outline: none;
+}
+
+.status-check input::placeholder {
+  color: #8b8b8b;
+}
+
+.status-result {
+  position: absolute;
+  right: 4vw;
+  top: 145px;
+
+  background: #fff;
+  border: 4px solid #000;
+  border-radius: 15px;
+  padding: 10px 20px;
+
+  font-size: 20px;
+  box-shadow: 4px 4px #000;
+  z-index: 20;
+}
+
+/* =========================================================
+   TASK FORM
+   ========================================================= */
+
+.task-card {
+  grid-column: 1;
+  grid-row: 2;
+
+  width: 100%;
+  height: 100%;
+
+  background: #fff;
+
+  border: 6px solid #000;
+  border-radius: 35px;
+  box-shadow: 0 7px 0 #000;
+
+  padding: 18px 25px;
+
+  overflow: hidden;
+}
+
+.task-card form {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.task-row {
+  width: 100%;
+}
+
+.task-row label {
+  display: block;
+
+  margin: 0 0 6px 12px;
+
+  font-size: clamp(13px, 1vw, 18px);
+}
+
+.dark-row {
+  width: 100%;
+  min-height: 48px;
+
+  background: #000;
+  border-radius: 15px;
+
+  padding: 7px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dark-row input {
+  flex: 1;
+  min-width: 0;
+
+  height: 38px;
+
+  border: 0;
+  border-radius: 10px;
+
+  padding: 0 12px;
+
+  font-family: inherit;
+  font-size: clamp(11px, 0.8vw, 14px);
+
+  outline: none;
+  background: #fff;
+  color: #000;
+}
+
+.dark-row a {
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fff;
+  color: #000;
+
+  border-radius: 10px;
+
+  padding: 0 18px;
+
+  text-decoration: none;
+
+  font-size: clamp(11px, 0.8vw, 14px);
+
+  white-space: nowrap;
+}
+
+.single {
+  justify-content: flex-end;
+}
+
+.task-row small {
+  display: block;
+  margin: 4px 0 0 10px;
+  color: #a00000;
+  font-size: 11px;
+}
+
+.server-error {
+  margin: 4px 0;
+  text-align: center;
+  color: #a00000;
+  font-size: 13px;
+}
+
+.register {
+  border: 0;
+
+  background: #000;
+  color: #fff;
+
+  border-radius: 13px;
+
+  padding: 11px 42px;
+
+  font-family: inherit;
+  font-size: clamp(14px, 1vw, 18px);
+
+  cursor: pointer;
+
+  display: block;
+  margin: 5px auto 0;
+}
+
+.register:hover {
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   PERSONALITY CARD
+   ========================================================= */
+
+.personality-card {
+  grid-column: 2;
+  grid-row: 2;
+
+  width: min(100%, 250px);
+
+  align-self: start;
+  justify-self: center;
+
+  background: #ddd;
+
+  border: 4px solid #000;
+  border-radius: 28px;
+
+  box-shadow: 0 5px 0 #000;
+
+  padding: 8px;
+
+  text-align: center;
+}
+
+.personality-card img {
+  width: 100%;
+  aspect-ratio: 1;
+
+  display: block;
+
+  object-fit: cover;
+
+  border: 5px solid #000;
+  border-radius: 21px;
+}
+
+.personality-card div {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+  gap: 5px;
+
+  font-size: 13px;
+
+  margin: 7px 2px;
+}
+
+.personality-card div span {
+  font-size: 12px;
+}
+
+.personality-card div strong {
+  font-size: 14px;
+}
+
+.personality-card > button {
+  border: 2px solid #000;
+
+  background: #fff;
+
+  border-radius: 8px;
+
+  width: 48px;
+  height: 32px;
+
+  font-family: Arial, sans-serif;
+  font-size: 19px;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   LEADERBOARD
+   ========================================================= */
+
+.leaderboard {
+  grid-column: 3;
+  grid-row: 2;
+
+  width: 100%;
+
+  align-self: start;
+}
+
+.leaderboard h2 {
+  text-align: center;
+
+  font-size: clamp(24px, 2.2vw, 38px);
+
+  margin: 0 0 10px;
+}
+
+.table {
+  width: 100%;
+
+  background: #fff;
+
+  border: 5px solid #000;
+  border-radius: 30px;
+
+  overflow: hidden;
+
+  box-shadow: 0 7px 0 #000;
+}
+
+.thead,
+.tr {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr 0.9fr;
+}
+
+.thead span,
+.tr span {
+  min-width: 0;
+
+  padding: 13px 7px;
+
+  border-right: 4px solid #000;
+  border-bottom: 4px solid #000;
+
+  text-align: center;
+
+  font-size: clamp(12px, 0.95vw, 17px);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thead span:last-child,
+.tr span:last-child {
+  border-right: 0;
+}
+
+.tbody {
+  max-height: 275px;
+  overflow-y: auto;
+}
+
+.tbody .tr:last-child span {
+  border-bottom: 0;
+}
+
+.scroll-buttons {
+  text-align: center;
+  margin-top: 13px;
+}
+
+.scroll-buttons button {
+  border: 3px solid #000;
+
+  background: #fff;
+
+  border-radius: 10px;
+
+  width: 45px;
+  height: 37px;
+
+  margin: 0 4px;
+
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   SUCCESS POPUP
+   ========================================================= */
+
+.success-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.65);
+
+  display: grid;
+  place-items: center;
+
+  z-index: 100;
+
+  padding: 20px;
+}
+
+.success-modal {
+  position: relative;
+
+  width: min(500px, 94vw);
+
+  background: #fff;
+
+  border: 6px solid #000;
+  border-radius: 30px;
+
+  box-shadow: 0 8px #000;
+
+  text-align: center;
+
+  padding: 25px;
+}
+
+.success-modal img {
+  width: 220px;
+  height: 220px;
+
+  object-fit: cover;
+
+  border-radius: 22px;
+}
+
+.success-modal h2 {
+  font-size: 28px;
+  margin: 15px 0 8px;
+}
+
+.success-modal p {
+  font-size: 22px;
+  margin: 0;
+}
+
+.close {
+  position: absolute;
+
+  right: 12px;
+  top: 5px;
+
+  border: 0;
+  background: transparent;
+
+  font-family: Arial, sans-serif;
+  font-size: 34px;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   LAPTOP / SMALL DESKTOP
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .task-page {
+    padding: 25px 30px;
+    grid-template-columns: 35% 23% 35%;
+    column-gap: 3.5%;
+  }
+
+  .character-carousel {
+    height: 230px;
+  }
+
+  .character-window {
+    width: 125px;
+  }
+
+  .status-check {
+    gap: 12px;
+  }
+
+  .status-check input {
+    width: 280px;
+  }
+
+  .task-card {
+    padding: 15px 20px;
+  }
+
+  .tbody {
+    max-height: 245px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .task-page {
+    height: auto;
+    min-height: 100svh;
+
+    overflow-y: auto;
+
+    padding: 20px 15px 40px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 22px;
+  }
+
+  .character-carousel,
+  .status-area,
+  .task-card,
+  .personality-card,
+  .leaderboard {
+    position: relative;
+
+    grid-column: auto;
+    grid-row: auto;
+
+    width: 100%;
+    max-width: 600px;
+
+    left: auto;
+    right: auto;
+    top: auto;
+
+    margin: 0 auto;
+  }
+
+  .character-carousel {
+    height: 230px;
+  }
+
+  .status-area {
+    padding-top: 0;
+  }
+
+  .status-check {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .status-check span {
+    font-size: 30px;
+  }
+
+  .status-check input {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .task-card {
+    height: auto;
+    min-height: 500px;
+  }
+
+  .task-card form {
+    gap: 14px;
+  }
+
+  .personality-card {
+    max-width: 250px;
+  }
+
+  .leaderboard {
+    margin-bottom: 20px;
+  }
+
+  .tbody {
+    max-height: 300px;
+  }
+
+  .status-result {
+    position: relative;
+    right: auto;
+    top: auto;
+    margin: 10px auto 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .character-carousel {
+    height: 190px;
+    border-radius: 28px;
+  }
+
+  .character-window {
+    width: 105px;
+    border-width: 5px;
+  }
+
+  .character-carousel > button {
+    font-size: 30px;
+  }
+
+  .task-card {
+    padding: 15px;
+    border-radius: 25px;
+  }
+
+  .dark-row a {
+    padding: 0 12px;
+  }
+
+  .leaderboard h2 {
+    font-size: 25px;
+  }
+}
