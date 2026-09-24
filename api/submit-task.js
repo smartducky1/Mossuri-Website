@@ -22,9 +22,16 @@ function validXUrl(value) {
   try {
     const url = new URL(clean(value))
     const host = url.hostname.toLowerCase().replace(/^www\./, '')
+
     if (host !== 'x.com' && host !== 'twitter.com') return false
+
     const parts = url.pathname.split('/').filter(Boolean)
-    return parts.length >= 3 && parts[1].toLowerCase() === 'status' && /^\d+$/.test(parts[2])
+
+    return (
+      parts.length >= 3 &&
+      parts[1].toLowerCase() === 'status' &&
+      /^\d+$/.test(parts[2])
+    )
   } catch {
     return false
   }
@@ -36,14 +43,33 @@ function validWallet(value) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return sendJson(res, 405, { ok: false, error: 'Method not allowed.' })
+    return sendJson(res, 405, {
+      ok: false,
+      error: 'Method not allowed.',
+    })
   }
 
   if (!APPS_SCRIPT_URL || !HMAC_SECRET) {
-    return sendJson(res, 500, { ok: false, error: 'Task submission service is not configured.' })
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Task submission service is not configured.',
+    })
   }
 
-  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {})
+  let body
+
+  try {
+    body =
+      typeof req.body === 'string'
+        ? JSON.parse(req.body)
+        : req.body || {}
+  } catch {
+    return sendJson(res, 400, {
+      ok: false,
+      error: 'Invalid request body.',
+    })
+  }
+
   const xUsername = clean(body.xUsername).replace(/^@/, '')
   const quoteTweet = clean(body.quoteTweet)
   const tagFriends = clean(body.tagFriends)
@@ -51,18 +77,57 @@ export default async function handler(req, res) {
   const character = clean(body.character)
 
   const errors = {}
-  if (!validUsername(xUsername)) errors.xUsername = 'Enter a valid X username.'
-  if (!validXUrl(quoteTweet)) errors.quoteTweet = 'Enter a valid X post URL.'
-  if (!validXUrl(tagFriends)) errors.tagFriends = 'Enter a valid X post/comment URL.'
-  if (!validWallet(wallet)) errors.wallet = 'Enter a valid EVM wallet address.'
-  if (!['Hyper', 'Smart', 'Goofy'].includes(character)) errors.character = 'Invalid character.'
+
+  if (!validUsername(xUsername)) {
+    errors.xUsername = 'Enter a valid X username.'
+  }
+
+  if (!validXUrl(quoteTweet)) {
+    errors.quoteTweet = 'Enter a valid X post URL.'
+  }
+
+  if (!validXUrl(tagFriends)) {
+    errors.tagFriends = 'Enter a valid X post/comment URL.'
+  }
+
+  if (!validWallet(wallet)) {
+    errors.wallet = 'Enter a valid EVM wallet address.'
+  }
+
+  if (!['Hyper', 'Smart', 'Goofy'].includes(character)) {
+    errors.character = 'Invalid character.'
+  }
 
   if (Object.keys(errors).length) {
-    return sendJson(res, 400, { ok: false, error: 'Please correct the highlighted fields.', fields: errors })
+    return sendJson(res, 400, {
+      ok: false,
+      error: 'Please correct the highlighted fields.',
+      fields: errors,
+    })
   }
 
   const timestamp = Date.now()
-  const payloadObject = {
+
+  // IMPORTANT:
+  // This MUST exactly match the Apps Script verification string.
+  const canonical = [
+    'task',
+    String(timestamp),
+    xUsername,
+    quoteTweet,
+    tagFriends,
+    wallet,
+    character,
+  ].join('|')
+
+  const signature = createHmac(
+    'sha256',
+    HMAC_SECRET.trim()
+  )
+    .update(canonical, 'utf8')
+    .digest('hex')
+
+  const payload = {
     type: 'task',
     timestamp,
     xUsername,
@@ -70,36 +135,48 @@ export default async function handler(req, res) {
     tagFriends,
     wallet,
     character,
+    signature,
   }
-
-  const payload = JSON.stringify(payloadObject)
-  const signature = createHmac('sha256', HMAC_SECRET.trim())
-    .update(payload, 'utf8')
-    .digest('hex')
 
   try {
     const googleResponse = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payloadObject, signature }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       redirect: 'follow',
     })
 
     const text = await googleResponse.text()
+
     let data = {}
-    try { data = JSON.parse(text) } catch {}
+
+    try {
+      data = JSON.parse(text)
+    } catch {}
 
     if (!googleResponse.ok) {
-      return sendJson(res, 502, { ok: false, error: `Google Apps Script returned HTTP ${googleResponse.status}.` })
+      return sendJson(res, 502, {
+        ok: false,
+        error: `Google Apps Script returned HTTP ${googleResponse.status}.`,
+      })
     }
 
     if (!data.ok) {
-      return sendJson(res, 400, { ok: false, error: data.error || 'Task submission failed.' })
+      return sendJson(res, 400, {
+        ok: false,
+        error: data.error || 'Task submission failed.',
+      })
     }
 
     return sendJson(res, 200, data)
   } catch (error) {
     console.error('submit-task error:', error)
-    return sendJson(res, 502, { ok: false, error: 'Could not reach submission service.' })
+
+    return sendJson(res, 502, {
+      ok: false,
+      error: 'Could not reach submission service.',
+    })
   }
 }
