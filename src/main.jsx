@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
-import TaskPage from './task/TaskPage.jsx'
 
 const X_URL = 'https://x.com/mossuris'
 const PINNED_POST_URL = X_URL
@@ -28,7 +27,7 @@ function validateWallet(value) {
   return /^0x[a-fA-F0-9]{40}$/.test(value.trim())
 }
 
-function HomePage() {
+function App() {
   const [xUser, setXUser] = useState('')
   const [qt, setQt] = useState('')
   const [tags, setTags] = useState('')
@@ -70,34 +69,19 @@ function HomePage() {
       const response = await fetch('/api/submit-whitelist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: 'whitelist',
-          xUsername: xUser,
-          quoteTweet: qt,
-          tagFriends: tags,
-          wallet
-        })
+        body: JSON.stringify({ xUsername: xUser, quoteTweet: qt, tagFriends: tags, wallet })
       })
-
       const result = await response.json().catch(() => ({}))
-
       if (!response.ok || !result.ok) {
-        setServerError(
-          result.error || 'We could not save your application. Please try again.'
-        )
-
+        setServerError(result.error || 'We could not save your application. Please try again.')
         if (result.fields) setErrors(result.fields)
-
         setStatus('idle')
         return
       }
-
       clearForm()
       setStatus('success')
     } catch {
-      setServerError(
-        'Connection error. Please check your internet connection and try again.'
-      )
+      setServerError('Connection error. Please check your internet connection and try again.')
       setStatus('idle')
     }
   }
@@ -111,280 +95,83 @@ function HomePage() {
   return (
     <main>
       <header className="top">
-        <a
-          className="social"
-          href={X_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-          X
-        </a>
-
-        <div className="rule">
-          <span></span>
-          <i></i>
-          <span></span>
-        </div>
-
-        <img
-          className="logo"
-          src="/assets/logo.png"
-          alt="Mossuri"
-        />
-
-        <div className="rule">
-          <span></span>
-          <i></i>
-          <span></span>
-        </div>
-
-        <a
-          className="social"
-          href={X_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-          X
-        </a>
+        <a className="social" href={X_URL} target="_blank" rel="noreferrer">X</a>
+        <div className="rule"><span></span><i></i><span></span></div>
+        <img className="logo" src="/assets/logo.png" alt="Mossuri" />
+        <div className="rule"><span></span><i></i><span></span></div>
+        <a className="social" href={X_URL} target="_blank" rel="noreferrer">X</a>
       </header>
 
       <section className="section">
-        <div className="section-title">
-          APPLY FOR WHITELIST
-        </div>
-
+        <div className="section-title">APPLY FOR WHITELIST</div>
         {status === 'success' ? (
           <>
-            <div
-              className="success-overlay"
-              role="presentation"
-              onMouseDown={(e) => {
-                if (e.target === e.currentTarget) startAnother()
-              }}
-            >
-              <div
-                className="success-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="success-title"
-              >
-                <button
-                  className="success-close"
-                  type="button"
-                  onClick={startAnother}
-                  aria-label="Close success message"
-                >
-                  ×
-                </button>
-
-                <img
-                  className="success-image"
-                  src="/assets/success-mascot.jpg"
-                  alt="Mossuri character"
-                />
-
-                <h1 id="success-title">
-                  Your Application
-                  <br />
-                  <span>have been received!</span>
-                </h1>
-
-                <p>
-                  Thanks for applying to Mossuri!
-                  <br />
-                  We’ll be in touch. Stay tuned!
-                </p>
-
-                <button
-                  className="submit success-button"
-                  type="button"
-                  onClick={startAnother}
-                >
-                  Awesome!
-                </button>
+            <div className="success-overlay" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) startAnother() }}>
+              <div className="success-modal" role="dialog" aria-modal="true" aria-labelledby="success-title">
+                <button className="success-close" type="button" onClick={startAnother} aria-label="Close success message">×</button>
+                <img className="success-image" src="/assets/success-mascot.jpg" alt="Mossuri character" />
+                <h1 id="success-title">Your Application<br /><span>have been received!</span></h1>
+                <p>Thanks for applying to Mossuri!<br />We’ll be in touch. Stay tuned!</p>
+                <button className="submit success-button" type="button" onClick={startAnother}>Awesome!</button>
               </div>
             </div>
           </>
         ) : (
-          <form
-            className="card"
-            onSubmit={submit}
-            noValidate
-          >
+          <form className="card" onSubmit={submit} noValidate>
             <div className="task">
-              <label>
-                FOLLOW X <small>(DROP X USERNAME)</small>
-              </label>
-
+              <label>FOLLOW X <small>(DROP X USERNAME)</small></label>
               <div className="row">
-                <input
-                  className={errors.xUser ? 'invalid' : ''}
-                  value={xUser}
-                  onChange={(e) => setXUser(e.target.value)}
-                  placeholder="@username"
-                  autoComplete="off"
-                />
-
-                <a
-                  className="action"
-                  href={X_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  FOLLOW
-                </a>
+                <input className={errors.xUser ? 'invalid' : ''} value={xUser} onChange={e=>setXUser(e.target.value)} placeholder="@username" autoComplete="off" />
+                <a className="action" href={X_URL} target="_blank" rel="noreferrer">FOLLOW</a>
               </div>
-
-              {errors.xUser && (
-                <p className="field-error">
-                  {errors.xUser}
-                </p>
-              )}
+              {errors.xUser && <p className="field-error">{errors.xUser}</p>}
             </div>
 
             <div className="task">
               <label>LIKE &amp; RT PINNED POST</label>
-
-              <a
-                className="wide-action"
-                href={PINNED_POST_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                GO TO X
-              </a>
+              <a className="wide-action" href={PINNED_POST_URL} target="_blank" rel="noreferrer">GO TO X</a>
             </div>
 
             <div className="task">
               <label>QT PINNED POST</label>
-
-              <input
-                className={errors.qt ? 'invalid' : ''}
-                value={qt}
-                onChange={(e) => setQt(e.target.value)}
-                placeholder="Paste your X post link"
-                autoComplete="off"
-              />
-
-              {errors.qt && (
-                <p className="field-error">
-                  {errors.qt}
-                </p>
-              )}
+              <input className={errors.qt ? 'invalid' : ''} value={qt} onChange={e=>setQt(e.target.value)} placeholder="Paste your X post link" autoComplete="off" />
+              {errors.qt && <p className="field-error">{errors.qt}</p>}
             </div>
 
             <div className="task">
-              <label>
-                TAG 3 FRIENDS IN PINNED POST COMMENT
-              </label>
-
-              <input
-                className={errors.tags ? 'invalid' : ''}
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="Paste your X comment link"
-                autoComplete="off"
-              />
-
-              {errors.tags && (
-                <p className="field-error">
-                  {errors.tags}
-                </p>
-              )}
+              <label>TAG 3 FRIENDS IN PINNED POST COMMENT</label>
+              <input className={errors.tags ? 'invalid' : ''} value={tags} onChange={e=>setTags(e.target.value)} placeholder="Paste your X comment link" autoComplete="off" />
+              {errors.tags && <p className="field-error">{errors.tags}</p>}
             </div>
 
             <div className="task">
               <label>SUBMIT YOUR EVM WALLET</label>
-
-              <input
-                className={errors.wallet ? 'invalid' : ''}
-                value={wallet}
-                onChange={(e) => setWallet(e.target.value)}
-                placeholder="0x..."
-                autoComplete="off"
-                spellCheck="false"
-              />
-
-              {errors.wallet && (
-                <p className="field-error">
-                  {errors.wallet}
-                </p>
-              )}
+              <input className={errors.wallet ? 'invalid' : ''} value={wallet} onChange={e=>setWallet(e.target.value)} placeholder="0x..." autoComplete="off" spellCheck="false" />
+              {errors.wallet && <p className="field-error">{errors.wallet}</p>}
             </div>
 
-            {serverError && (
-              <p className="form-error">
-                {serverError}
-              </p>
-            )}
-
-            <button
-              className="submit"
-              type="submit"
-              disabled={status === 'sending'}
-            >
-              {status === 'sending'
-                ? 'SUBMITTING...'
-                : 'SEND APPLICATION'}
+            {serverError && <p className="form-error">{serverError}</p>}
+            <button className="submit" type="submit" disabled={status === 'sending'}>
+              {status === 'sending' ? 'SUBMITTING...' : 'SEND APPLICATION'}
             </button>
           </form>
         )}
       </section>
 
       <section className="gallery-section">
-        <div className="section-title">
-          GALLERY
-        </div>
-
+        <div className="section-title">GALLERY</div>
         <div className="marquee">
-          <div className="track left">
-            {rows[0].map((src, i) => (
-              <img
-                key={'a' + i}
-                src={src}
-                alt=""
-                draggable="false"
-              />
-            ))}
-          </div>
-
-          <div className="track right">
-            {rows[1].map((src, i) => (
-              <img
-                key={'b' + i}
-                src={src}
-                alt=""
-                draggable="false"
-              />
-            ))}
-          </div>
+          <div className="track left">{rows[0].map((src,i)=><img key={'a'+i} src={src} alt="" draggable="false"/>)}</div>
+          <div className="track right">{rows[1].map((src,i)=><img key={'b'+i} src={src} alt="" draggable="false"/>)}</div>
         </div>
       </section>
 
       <footer>
         <span>© 2026 MOSSURI</span>
-
-        <button
-          onClick={() =>
-            window.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            })
-          }
-        >
-          BACK TO TOP
-        </button>
+        <button onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>BACK TO TOP</button>
       </footer>
     </main>
   )
 }
 
-function AppRouter() {
-  const path = window.location.pathname.replace(/\/+$/, '') || '/'
-  if (path === '/task') return <TaskPage />
-  return <HomePage />
-}
-
-createRoot(
-  document.getElementById('root')
-).render(<AppRouter />)
+createRoot(document.getElementById('root')).render(<App />)
