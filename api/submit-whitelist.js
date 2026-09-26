@@ -1,90 +1,197 @@
-import { createHmac } from 'node:crypto';
+const crypto = require('crypto');
 
-const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL;
-const HMAC_SECRET = process.env.MOSSURI_HMAC_SECRET;
+const ALLOWED_METHODS = ['POST'];
 
 function sendJson(res, status, data) {
-  res.status(status);
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
-  return res.json(data);
+  res.status(status).json(data);
 }
 
-export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.status(204);
-    return res.end();
-  }
+function normalizeWallet(wallet) {
+  return String(wallet || '').trim().toLowerCase();
+}
 
-  if (req.method !== 'POST') {
+function isValidEvmWallet(wallet) {
+  return /^0x[a-fA-F0-9]{40}$/.test(wallet);
+}
+
+function createHmac(payload, secret) {
+  return crypto
+    .createHmac('sha256', secret)
+    .update(payload, 'utf8')
+    .digest('hex');
+}
+
+module.exports = async function handler(req, res) {
+  // ============================================
+  // METHOD CHECK
+  // ============================================
+
+  if (!ALLOWED_METHODS.includes(req.method)) {
+    res.setHeader('Allow', ALLOWED_METHODS);
     return sendJson(res, 405, {
       ok: false,
-      error: 'Method not allowed.',
-    });
-  }
-
-  if (!APPS_SCRIPT_URL) {
-    return sendJson(res, 500, {
-      ok: false,
-      error: 'Submission service is not configured.',
-    });
-  }
-
-  if (!HMAC_SECRET) {
-    return sendJson(res, 500, {
-      ok: false,
-      error: 'Submission security is not configured.',
+      error: 'Method not allowed.'
     });
   }
 
   try {
-    const body =
-      typeof req.body === 'string'
-        ? JSON.parse(req.body)
-        : req.body || {};
+    // ============================================
+    // ENVIRONMENT VARIABLES
+    // ============================================
 
-    if (body.source !== 'whitelist') {
-      return sendJson(res, 400, {
+    const APPS_SCRIPT_URL =
+      process.env.GOOGLE_APPS_SCRIPT_URL;
+
+    const HMAC_SECRET =
+      process.env.MOSSURI_HMAC_SECRET;
+
+    if (!APPS_SCRIPT_URL) {
+      console.error('GOOGLE_APPS_SCRIPT_URL is missing.');
+
+      return sendJson(res, 500, {
         ok: false,
-        error: 'This endpoint accepts homepage whitelist submissions only.',
+        error: 'Submission service is not configured.'
       });
     }
 
-    const xUsername = String(body.xUsername || '').trim();
-    const likeRt = String(body.likeRt || '').trim();
-    const quoteTweet = String(body.quoteTweet || '').trim();
-    const tagFriends = String(body.tagFriends || '').trim();
-    const wallet = String(body.wallet || '').trim();
+    if (!HMAC_SECRET) {
+      console.error('MOSSURI_HMAC_SECRET is missing.');
+
+      return sendJson(res, 500, {
+        ok: false,
+        error: 'Submission security is not configured.'
+      });
+    }
+
+    // ============================================
+    // READ REQUEST BODY
+    // ============================================
+
+    const body = req.body || {};
+
+    // ============================================
+    // SOURCE
+    //
+    // The current frontend sends:
+    // source: "whitelist"
+    //
+    // We allow an omitted source so an older
+    // cached frontend does not immediately fail.
+    // ============================================
+
+    if (
+      body.source !== undefined &&
+      body.source !== 'whitelist'
+    ) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Invalid submission source.'
+      });
+    }
+
+    // ============================================
+    // READ FORM DATA
+    // ============================================
+
+    const xUsername =
+      String(body.xUsername || '')
+        .trim()
+        .replace(/^@/, '');
+
+    const likeRt =
+      String(body.likeRt || '').trim();
+
+    const quoteTweet =
+      String(body.quoteTweet || '').trim();
+
+    const tagFriends =
+      String(body.tagFriends || '').trim();
+
+    const wallet =
+      normalizeWallet(body.wallet);
+
+    // ============================================
+    // VALIDATE X USERNAME
+    // ============================================
 
     if (!xUsername) {
       return sendJson(res, 400, {
         ok: false,
-        error: 'X username is required.',
+        error: 'X username is required.'
       });
     }
+
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(xUsername)) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Invalid X username.'
+      });
+    }
+
+    // ============================================
+    // VALIDATE LIKE / RT
+    // ============================================
+
+    if (!likeRt) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Like and RT confirmation is required.'
+      });
+    }
+
+    // ============================================
+    // VALIDATE QUOTE TWEET
+    // ============================================
 
     if (!quoteTweet) {
       return sendJson(res, 400, {
         ok: false,
-        error: 'Quote tweet is required.',
+        error: 'Quote tweet is required.'
       });
     }
+
+    // ============================================
+    // VALIDATE TAGGED FRIENDS
+    // ============================================
 
     if (!tagFriends) {
       return sendJson(res, 400, {
         ok: false,
-        error: 'Tagged friends are required.',
+        error: 'Tagged friends are required.'
       });
     }
 
-    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+    // ============================================
+    // VALIDATE EVM WALLET
+    // ============================================
+
+    if (!wallet) {
       return sendJson(res, 400, {
         ok: false,
-        error: 'Invalid EVM wallet address.',
+        error: 'EVM wallet is required.'
       });
     }
 
+    if (!isValidEvmWallet(wallet)) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'Invalid EVM wallet address.'
+      });
+    }
+
+    // ============================================
+    // CREATE TIMESTAMP
+    // ============================================
+
     const timestamp = Date.now();
+
+    // ============================================
+    // CREATE PAYLOAD
+    //
+    // IMPORTANT:
+    // This order must stay the same because the
+    // exact JSON is what gets signed by HMAC.
+    // ============================================
 
     const payloadObject = {
       source: 'whitelist',
@@ -93,82 +200,110 @@ export default async function handler(req, res) {
       likeRt,
       quoteTweet,
       tagFriends,
-      wallet,
+      wallet
     };
 
-    const payload = JSON.stringify(payloadObject);
+    const payload =
+      JSON.stringify(payloadObject);
 
-    const signature = createHmac(
-      'sha256',
-      HMAC_SECRET
-    )
-      .update(payload, 'utf8')
-      .digest('hex');
+    // ============================================
+    // CREATE HMAC SHA-256 SIGNATURE
+    // ============================================
 
-    const requestBody = JSON.stringify({
+    const signature =
+      createHmac(payload, HMAC_SECRET);
+
+    // ============================================
+    // SEND TO GOOGLE APPS SCRIPT
+    // ============================================
+
+    const appsScriptPayload = {
       ...payloadObject,
-      signature,
-    });
+      signature
+    };
 
-    /*
-     * Google Apps Script web apps redirect the request.
-     * We let fetch handle Google's redirect instead of manually
-     * POSTing to the redirect destination, which was causing 405.
-     */
-    const googleResponse = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: requestBody,
-      redirect: 'follow',
-    });
+    const response = await fetch(
+      APPS_SCRIPT_URL,
+      {
+        method: 'POST',
 
-    const responseText = await googleResponse.text();
+        headers: {
+          'Content-Type': 'application/json'
+        },
 
-    console.log(
-      'Google Apps Script response:',
-      googleResponse.status,
-      responseText
+        body: JSON.stringify(
+          appsScriptPayload
+        )
+      }
     );
 
-    if (!googleResponse.ok) {
-      return sendJson(res, 502, {
-        ok: false,
-        error: `Google Apps Script returned HTTP ${googleResponse.status}.`,
-      });
-    }
+    // ============================================
+    // READ APPS SCRIPT RESPONSE
+    // ============================================
 
-    let googleData;
+    const responseText =
+      await response.text();
+
+    let result;
 
     try {
-      googleData = JSON.parse(responseText);
-    } catch {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(
+        'Google Apps Script returned invalid JSON:',
+        responseText
+      );
+
       return sendJson(res, 502, {
         ok: false,
-        error: 'Google Apps Script returned an invalid response.',
+        error: 'Invalid response from submission service.'
       });
     }
 
-    if (!googleData.ok) {
-      return sendJson(res, 400, {
-        ok: false,
-        error: googleData.error || 'Submission was rejected.',
-      });
+    // ============================================
+    // HANDLE APPS SCRIPT ERROR
+    // ============================================
+
+    if (!response.ok || result.ok === false) {
+      console.error(
+        'Google Apps Script error:',
+        result
+      );
+
+      return sendJson(
+        res,
+        response.ok ? 400 : 502,
+        {
+          ok: false,
+          error:
+            result.error ||
+            'Could not save your application.'
+        }
+      );
     }
+
+    // ============================================
+    // SUCCESS
+    // ============================================
 
     return sendJson(res, 200, {
       ok: true,
       success: true,
-      message: 'Application submitted successfully.',
+      message:
+        result.message ||
+        'Application submitted successfully.'
     });
 
   } catch (error) {
-    console.error('Whitelist submission error:', error);
+    console.error(
+      'Whitelist submission error:',
+      error
+    );
 
     return sendJson(res, 500, {
       ok: false,
-      error: 'Unable to submit application. Please try again.',
+      error:
+        'Could not save your application. Please try again.'
     });
   }
-}
+};
