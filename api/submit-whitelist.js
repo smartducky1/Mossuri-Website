@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 function sendJson(res, status, data) {
   res.status(status);
   res.setHeader('Content-Type', 'application/json');
@@ -7,23 +5,7 @@ function sendJson(res, status, data) {
   return res.json(data);
 }
 
-function timingSafeEqual(a, b) {
-  const aBuffer = Buffer.from(String(a));
-  const bBuffer = Buffer.from(String(b));
-
-  if (aBuffer.length !== bBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(aBuffer, bBuffer);
-}
-
 export default async function handler(req, res) {
-
-  // ============================================
-  // METHOD
-  // ============================================
-
   if (req.method !== 'POST') {
     return sendJson(res, 405, {
       ok: false,
@@ -32,11 +14,6 @@ export default async function handler(req, res) {
   }
 
   try {
-
-    // ============================================
-    // ENVIRONMENT VARIABLES
-    // ============================================
-
     const APPS_SCRIPT_URL =
       process.env.GOOGLE_APPS_SCRIPT_URL;
 
@@ -44,9 +21,7 @@ export default async function handler(req, res) {
       process.env.MOSSURI_SUBMISSION_TOKEN;
 
     if (!APPS_SCRIPT_URL) {
-      console.error(
-        'GOOGLE_APPS_SCRIPT_URL is missing.'
-      );
+      console.error('GOOGLE_APPS_SCRIPT_URL is missing.');
 
       return sendJson(res, 500, {
         ok: false,
@@ -55,9 +30,7 @@ export default async function handler(req, res) {
     }
 
     if (!SUBMISSION_TOKEN) {
-      console.error(
-        'MOSSURI_SUBMISSION_TOKEN is missing.'
-      );
+      console.error('MOSSURI_SUBMISSION_TOKEN is missing.');
 
       return sendJson(res, 500, {
         ok: false,
@@ -65,18 +38,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // READ BODY
-    // ============================================
-
     const body =
       typeof req.body === 'string'
         ? JSON.parse(req.body)
         : req.body || {};
-
-    // ============================================
-    // FORM DATA
-    // ============================================
 
     const xUsername =
       String(body.xUsername || '')
@@ -92,10 +57,7 @@ export default async function handler(req, res) {
     const wallet =
       String(body.wallet || '').trim();
 
-    // ============================================
-    // VALIDATE X USERNAME
-    // ============================================
-
+    // Validate X username
     if (!/^[A-Za-z0-9_]{1,15}$/.test(xUsername)) {
       return sendJson(res, 400, {
         ok: false,
@@ -103,10 +65,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // VALIDATE QUOTE TWEET
-    // ============================================
-
+    // Validate quote tweet
     if (!quoteTweet) {
       return sendJson(res, 400, {
         ok: false,
@@ -114,10 +73,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // VALIDATE TAGGED FRIENDS
-    // ============================================
-
+    // Validate tagged friends
     if (!tagFriends) {
       return sendJson(res, 400, {
         ok: false,
@@ -125,10 +81,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // VALIDATE EVM WALLET
-    // ============================================
-
+    // Validate EVM wallet
     if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
       return sendJson(res, 400, {
         ok: false,
@@ -136,10 +89,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // CREATE SERVER PAYLOAD
-    // ============================================
-
+    // Send submission to Google Apps Script
     const payload = {
       source: 'whitelist',
       timestamp: Date.now(),
@@ -147,27 +97,17 @@ export default async function handler(req, res) {
       quoteTweet,
       tagFriends,
       wallet,
-
-      // Server-to-server authentication.
-      // This NEVER comes from the browser.
       token: SUBMISSION_TOKEN
     };
-
-    // ============================================
-    // SEND TO GOOGLE APPS SCRIPT
-    // ============================================
 
     const response = await fetch(
       APPS_SCRIPT_URL,
       {
         method: 'POST',
-
         headers: {
           'Content-Type': 'application/json'
         },
-
         body: JSON.stringify(payload),
-
         redirect: 'follow'
       }
     );
@@ -180,17 +120,18 @@ export default async function handler(req, res) {
       response.status
     );
 
-    // ============================================
-    // PARSE RESPONSE
-    // ============================================
+    console.log(
+      'Google Apps Script response:',
+      responseText
+    );
 
     let result;
 
     try {
       result = JSON.parse(responseText);
-    } catch {
+    } catch (parseError) {
       console.error(
-        'Google Apps Script returned:',
+        'Invalid Google Apps Script response:',
         responseText
       );
 
@@ -201,12 +142,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // HANDLE GOOGLE ERROR
-    // ============================================
-
     if (!response.ok || result.ok === false) {
-
       console.error(
         'Google Apps Script rejected submission:',
         result
@@ -220,10 +156,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // SUCCESS
-    // ============================================
-
     return sendJson(res, 200, {
       ok: true,
       success: true,
@@ -233,7 +165,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-
     console.error(
       'Whitelist submission error:',
       error
