@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/task",
-      "destination": "/index.html"
-    }
-  ]
-}
