@@ -1,105 +1,70 @@
-const crypto = require('crypto');
+import { createHmac } from 'node:crypto';
 
-const ALLOWED_METHODS = ['POST'];
+const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL;
+const HMAC_SECRET = process.env.MOSSURI_HMAC_SECRET;
 
 function sendJson(res, status, data) {
-  res.status(status).json(data);
+  res.status(status);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json(data);
 }
 
-function normalizeWallet(wallet) {
-  return String(wallet || '').trim().toLowerCase();
-}
+export default async function handler(req, res) {
 
-function isValidEvmWallet(wallet) {
-  return /^0x[a-fA-F0-9]{40}$/.test(wallet);
-}
-
-function createHmac(payload, secret) {
-  return crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex');
-}
-
-module.exports = async function handler(req, res) {
   // ============================================
-  // METHOD CHECK
+  // METHOD
   // ============================================
 
-  if (!ALLOWED_METHODS.includes(req.method)) {
-    res.setHeader('Allow', ALLOWED_METHODS);
+  if (req.method === 'OPTIONS') {
+    res.status(204);
+    return res.end();
+  }
+
+  if (req.method !== 'POST') {
     return sendJson(res, 405, {
       ok: false,
       error: 'Method not allowed.'
     });
   }
 
+  // ============================================
+  // ENVIRONMENT VARIABLES
+  // ============================================
+
+  if (!APPS_SCRIPT_URL) {
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Submission service is not configured.'
+    });
+  }
+
+  if (!HMAC_SECRET) {
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'Submission security is not configured.'
+    });
+  }
+
   try {
-    // ============================================
-    // ENVIRONMENT VARIABLES
-    // ============================================
-
-    const APPS_SCRIPT_URL =
-      process.env.GOOGLE_APPS_SCRIPT_URL;
-
-    const HMAC_SECRET =
-      process.env.MOSSURI_HMAC_SECRET;
-
-    if (!APPS_SCRIPT_URL) {
-      console.error('GOOGLE_APPS_SCRIPT_URL is missing.');
-
-      return sendJson(res, 500, {
-        ok: false,
-        error: 'Submission service is not configured.'
-      });
-    }
-
-    if (!HMAC_SECRET) {
-      console.error('MOSSURI_HMAC_SECRET is missing.');
-
-      return sendJson(res, 500, {
-        ok: false,
-        error: 'Submission security is not configured.'
-      });
-    }
 
     // ============================================
-    // READ REQUEST BODY
+    // READ REQUEST
     // ============================================
 
-    const body = req.body || {};
+    const body =
+      typeof req.body === 'string'
+        ? JSON.parse(req.body)
+        : req.body || {};
 
     // ============================================
-    // SOURCE
-    //
-    // The current frontend sends:
-    // source: "whitelist"
-    //
-    // We allow an omitted source so an older
-    // cached frontend does not immediately fail.
-    // ============================================
-
-    if (
-      body.source !== undefined &&
-      body.source !== 'whitelist'
-    ) {
-      return sendJson(res, 400, {
-        ok: false,
-        error: 'Invalid submission source.'
-      });
-    }
-
-    // ============================================
-    // READ FORM DATA
+    // FORM DATA
     // ============================================
 
     const xUsername =
       String(body.xUsername || '')
         .trim()
         .replace(/^@/, '');
-
-    const likeRt =
-      String(body.likeRt || '').trim();
 
     const quoteTweet =
       String(body.quoteTweet || '').trim();
@@ -108,7 +73,7 @@ module.exports = async function handler(req, res) {
       String(body.tagFriends || '').trim();
 
     const wallet =
-      normalizeWallet(body.wallet);
+      String(body.wallet || '').trim();
 
     // ============================================
     // VALIDATE X USERNAME
@@ -125,17 +90,6 @@ module.exports = async function handler(req, res) {
       return sendJson(res, 400, {
         ok: false,
         error: 'Invalid X username.'
-      });
-    }
-
-    // ============================================
-    // VALIDATE LIKE / RT
-    // ============================================
-
-    if (!likeRt) {
-      return sendJson(res, 400, {
-        ok: false,
-        error: 'Like and RT confirmation is required.'
       });
     }
 
@@ -162,17 +116,10 @@ module.exports = async function handler(req, res) {
     }
 
     // ============================================
-    // VALIDATE EVM WALLET
+    // VALIDATE WALLET
     // ============================================
 
-    if (!wallet) {
-      return sendJson(res, 400, {
-        ok: false,
-        error: 'EVM wallet is required.'
-      });
-    }
-
-    if (!isValidEvmWallet(wallet)) {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
       return sendJson(res, 400, {
         ok: false,
         error: 'Invalid EVM wallet address.'
@@ -180,49 +127,62 @@ module.exports = async function handler(req, res) {
     }
 
     // ============================================
-    // CREATE TIMESTAMP
+    // TIMESTAMP
     // ============================================
 
     const timestamp = Date.now();
 
     // ============================================
-    // CREATE PAYLOAD
+    // PAYLOAD
     //
     // IMPORTANT:
-    // This order must stay the same because the
-    // exact JSON is what gets signed by HMAC.
+    // This matches the fields currently sent by
+    // your main.jsx.
     // ============================================
 
     const payloadObject = {
       source: 'whitelist',
       timestamp,
       xUsername,
-      likeRt,
+      likeRt: 'completed',
       quoteTweet,
       tagFriends,
       wallet
     };
 
+    // ============================================
+    // CREATE HMAC
+    // ============================================
+
     const payload =
       JSON.stringify(payloadObject);
 
-    // ============================================
-    // CREATE HMAC SHA-256 SIGNATURE
-    // ============================================
-
     const signature =
-      createHmac(payload, HMAC_SECRET);
+      createHmac(
+        'sha256',
+        HMAC_SECRET
+      )
+        .update(payload, 'utf8')
+        .digest('hex');
 
     // ============================================
-    // SEND TO GOOGLE APPS SCRIPT
+    // FINAL GOOGLE APPS SCRIPT REQUEST
     // ============================================
 
-    const appsScriptPayload = {
+    const requestBody = JSON.stringify({
       ...payloadObject,
       signature
-    };
+    });
 
-    const response = await fetch(
+    console.log(
+      'Sending whitelist application to Google Apps Script'
+    );
+
+    // ============================================
+    // GOOGLE APPS SCRIPT
+    // ============================================
+
+    const googleResponse = await fetch(
       APPS_SCRIPT_URL,
       {
         method: 'POST',
@@ -231,55 +191,77 @@ module.exports = async function handler(req, res) {
           'Content-Type': 'application/json'
         },
 
-        body: JSON.stringify(
-          appsScriptPayload
-        )
+        body: requestBody,
+
+        redirect: 'follow'
       }
     );
 
     // ============================================
-    // READ APPS SCRIPT RESPONSE
+    // READ RESPONSE
     // ============================================
 
     const responseText =
-      await response.text();
+      await googleResponse.text();
 
-    let result;
+    console.log(
+      'Google Apps Script response:',
+      googleResponse.status,
+      responseText
+    );
+
+    // ============================================
+    // HTTP ERROR
+    // ============================================
+
+    if (!googleResponse.ok) {
+      return sendJson(res, 502, {
+        ok: false,
+        error:
+          `Google Apps Script returned HTTP ${googleResponse.status}.`
+      });
+    }
+
+    // ============================================
+    // PARSE RESPONSE
+    // ============================================
+
+    let googleData;
 
     try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
+      googleData =
+        JSON.parse(responseText);
+    } catch (error) {
+
       console.error(
-        'Google Apps Script returned invalid JSON:',
+        'Invalid Google Apps Script response:',
         responseText
       );
 
       return sendJson(res, 502, {
         ok: false,
-        error: 'Invalid response from submission service.'
+        error:
+          'Google Apps Script returned an invalid response.'
       });
     }
 
     // ============================================
-    // HANDLE APPS SCRIPT ERROR
+    // GOOGLE APPS SCRIPT REJECTED
     // ============================================
 
-    if (!response.ok || result.ok === false) {
+    if (!googleData.ok) {
+
       console.error(
-        'Google Apps Script error:',
-        result
+        'Google Apps Script rejected application:',
+        googleData
       );
 
-      return sendJson(
-        res,
-        response.ok ? 400 : 502,
-        {
-          ok: false,
-          error:
-            result.error ||
-            'Could not save your application.'
-        }
-      );
+      return sendJson(res, 400, {
+        ok: false,
+        error:
+          googleData.error ||
+          'Submission was rejected.'
+      });
     }
 
     // ============================================
@@ -290,11 +272,11 @@ module.exports = async function handler(req, res) {
       ok: true,
       success: true,
       message:
-        result.message ||
         'Application submitted successfully.'
     });
 
   } catch (error) {
+
     console.error(
       'Whitelist submission error:',
       error
@@ -306,4 +288,4 @@ module.exports = async function handler(req, res) {
         'Could not save your application. Please try again.'
     });
   }
-};
+}
